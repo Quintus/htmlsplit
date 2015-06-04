@@ -6,6 +6,7 @@
  */
 struct Splitter {
     unsigned short level;
+    const char* langtag;
 
     /***** Internal use *****/
     xmlBufferPtr p_head; /*< Extracted <head> element */
