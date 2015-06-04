@@ -1,0 +1,19 @@
+#ifndef HTMLSPLITTER_SPLIT_H
+#define HTMLSPLITTER_SPLIT_H
+
+/**
+ * Main structure of this program.
+ */
+struct Splitter {
+    unsigned short level;
+
+    /***** Internal use *****/
+    xmlBufferPtr p_head; /*< Extracted <head> element */
+};
+
+struct Splitter* splitter_new();
+void splitter_free(struct Splitter* ptr);
+
+void splitter_split_file(struct Splitter* p_splitter, const char* infile, const char* outdir);
+
+#endif
