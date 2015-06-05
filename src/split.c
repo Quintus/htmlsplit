@@ -15,7 +15,9 @@
 
 static void extract_head(struct Splitter* p_splitter, htmlDocPtr p_document);
 static void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char* outdir);
-static void write_file(struct Splitter* p_splitter, xmlBufferPtr p_prevnodestr, const char* targetfile);
+static void write_file(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile);
+static void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
+static void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 
 /**
  * Create a new Splitter struct. The result must be
@@ -96,92 +98,90 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char*
 
     for(i = 0; i < total; i++) {
         xmlNodePtr p_node = NULL;
-        xmlNodePtr p_next_node = NULL;
-        int nodecount = 0;
-        xmlNodePtr* nodestore = NULL;
-        int j = 0;
+
+        /* As we modify the document using the following functions,
+         * we invalidate the XPath result and must query for each
+         * tag anew. */
         p_results = xmlXPathEvalExpression(BAD_CAST("//h1"), p_context); /* TODO: use p_splitter->level instead of <h1> */
         p_node = p_results->nodesetval->nodeTab[i];
 
         printf("Examining node %d.\n", i);
 
-        /* Count the number of following nodes we have to store */
-        p_next_node = p_node;
-        while(p_next_node) {
-            p_next_node = xmlNextElementSibling(p_next_node);
-            nodecount++;
-        }
-        nodecount--; /* NULL element not required */
-
-        printf("Going to temporaryly delete %d sibling nodes.\n", nodecount);
-
-        /* Allocate the space we need for storing */
-        nodestore = malloc(nodecount * sizeof(xmlNodePtr));
-
-        /* Store all the nodes and unlink them from the document */
-        p_next_node = xmlNextElementSibling(p_node);
-        while (p_next_node) {
-            xmlNodePtr p_next_next_node = xmlNextElementSibling(p_next_node);
-            xmlUnlinkNode(p_next_node);
-
-            nodestore[j++] = p_next_node;
-            p_next_node    = p_next_next_node;
-        }
-
+        /* slice_preceeding_nodes(p_splitter, p_node); */
+        slice_following_nodes(p_splitter, p_node);
 
         memset(targetfilename, '\0', PATH_MAX);
         sprintf(targetfilename, "%s/%04d.html", outdir, i);
+        write_file(p_splitter, p_document, targetfilename);
 
-        FILE* p_file = fopen(targetfilename, "w");
-        xmlDocDump(p_file, p_document);
-        fclose(p_file);
-        /* write_file(p_splitter, p_prevnodestr, targetfilename); */
+        reinsert_following_nodes(p_splitter, p_node);
+        /* reinsert_preceeding_nodes(p_splitter, p_node); */
 
-        /* Re-add the unlinked nodes */
-        p_next_node = p_node;
-        for(j=0; j < nodecount; j++) {
-            printf("Re-Adding node %d.\n", j);
-            xmlAddNextSibling(p_next_node, nodestore[j]);
-        }
-
-        free(nodestore);
         xmlXPathFreeObject(p_results);
     }
 
     xmlXPathFreeContext(p_context);
 }
 
-/*
-void recurse_collect_node(struct Splitter* p_splitter, xmlBufferPtr p_buffer, xmlNodePtr p_node)
+void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
 {
-    
+    xmlNodePtr p_next_node = NULL;
+    xmlNodePtr* nodestore = NULL;
+    int nodecount = 0;
+    int i = 0;
+
+    /* Count the number of following nodes we have to store */
+    p_next_node = p_node;
+    while(p_next_node) {
+        p_next_node = xmlNextElementSibling(p_next_node);
+        nodecount++;
+    }
+    nodecount--; /* NULL element not required */
+
+    printf("Going to temporaryly delete %d following nodes.\n", nodecount);
+
+    /* Allocate the space we need for storing */
+    nodestore = malloc(nodecount * sizeof(xmlNodePtr));
+
+    /* Store all the nodes and unlink them from the document */
+    p_next_node = xmlNextElementSibling(p_node);
+    while (p_next_node) {
+        xmlNodePtr p_next_next_node = xmlNextElementSibling(p_next_node);
+        xmlUnlinkNode(p_next_node);
+
+        nodestore[i++] = p_next_node;
+        p_next_node    = p_next_next_node;
+    }
+
+    p_splitter->num_following_nodes = nodecount;
+    p_splitter->p_following_nodes   = nodestore;
 }
 
-xmlBufferPtr collect_preceeding_nodes(struct Splitter* p_splitter, htmlDocPtr p_docment, xmlNodePtr p_node)
+void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
 {
-    xmlXPathContextPtr p_bodyctx = NULL;
-    xmlXPathObjectPtr p_bodyresult = NULL;
-    xmlBufferPtr p_buffer = xmlBufferCreate();
+    xmlNodePtr p_next_node = NULL;
+    int i = 0;
 
-    p_bodyctx = xmlXPathNewContext(p_document);
-    p_bodyresult = xmlXPathEvalExpression(BAD_CAST("/html/body"), p_bodyctx);
+    /* Re-add the unlinked nodes */
+    p_next_node = p_node;
+    for(i=0; i < p_splitter->num_following_nodes; i++) {
+        printf("Re-Adding following node %d.\n", i);
 
-    recurse_collect_node(p_splitter, p_buffer, p_bodyresult->nodesetval->nodeTab[0]);
+        xmlAddNextSibling(p_next_node, p_splitter->p_following_nodes[i]);
+        p_next_node = xmlNextElementSibling(p_next_node);
+    }
 
-    xmlXPathFreeObject(p_bodyresult);
-    xmlXPathFreeContext(p_bodyresult);
-
-    return p_buffer;
+    /* Cleanup */
+    free(p_splitter->p_following_nodes);
+    p_splitter->p_following_nodes = NULL;
+    p_splitter->num_following_nodes = 0;
 }
-*/
 
-
-void write_file(struct Splitter* p_splitter, xmlBufferPtr p_prevnodestr, const char* targetfile)
+void write_file(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile)
 {
     printf("Writing file '%s'\n", targetfile);
 
     FILE* p_file = fopen(targetfile, "w");
-    /* TODO */
+    xmlDocFormatDump(p_file, p_document, 1); /* TODO: Set global formatting option on libxml2 */
     fclose(p_file);
 }
-
