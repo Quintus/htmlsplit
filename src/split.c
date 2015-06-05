@@ -16,8 +16,8 @@
 static void extract_head(struct Splitter* p_splitter, htmlDocPtr p_document);
 static void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char* outdir);
 static void write_file(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile);
-static void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node, htmlDocPtr p_document);
-static void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node, htmlDocPtr p_document);
+static void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
+static void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static void reinsert_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 
@@ -55,12 +55,6 @@ void splitter_split_file(struct Splitter* p_splitter, const char* infile, const 
 
     extract_head(p_splitter, p_document);
     handle_body(p_splitter, p_document, outdir);
-
-    /*
-    printf("=== <head> ===\n");
-    printf(xmlBufferContent(p_splitter->p_head));
-    printf("\n=== </head> ===\n");
-    */
 
     xmlFreeDoc(p_document);
 }
@@ -132,8 +126,8 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char*
             }
 
             /* Remove those parts we are not interested in */
-            slice_preceeding_nodes(p_splitter, p_start_node, p_document);
-            slice_following_nodes(p_splitter, p_end_node, p_document);
+            slice_preceeding_nodes(p_splitter, p_start_node);
+            slice_following_nodes(p_splitter, p_end_node);
 
             /* Write out */
             memset(targetfilename, '\0', PATH_MAX);
@@ -163,7 +157,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char*
     xmlXPathFreeContext(p_context);
 }
 
-void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node, htmlDocPtr p_document)
+void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
 {
     xmlNodePtr p_next_node = NULL;
     xmlNodePtr* nodestore = NULL;
@@ -206,7 +200,7 @@ void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node, htmlD
     p_splitter->p_following_nodes   = nodestore;
 }
 
-void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node, htmlDocPtr p_document)
+void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
 {
     xmlNodePtr p_prev_node;
     xmlNodePtr* nodestore = NULL;
