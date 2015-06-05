@@ -9,7 +9,6 @@ struct Splitter {
     const char* langtag;
 
     /***** Internal use *****/
-    xmlBufferPtr p_head; /*< Extracted <head> element */
     xmlNodePtr* p_following_nodes;
     xmlNodePtr* p_preceeding_nodes;
     int num_following_nodes;

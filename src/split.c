@@ -13,7 +13,6 @@
 /* The BAD_CAST() macro comes from libxml2 itself,
  * see http://www.xmlsoft.org/html/libxml-xmlstring.html. */
 
-static void extract_head(struct Splitter* p_splitter, htmlDocPtr p_document);
 static void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char* outdir);
 static void write_file(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile);
 static void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
@@ -34,7 +33,6 @@ struct Splitter* splitter_new()
 
     /* Init all the fields */
     ptr->level = 1;
-    ptr->p_head = xmlBufferCreate();
 
     return ptr;
 }
@@ -44,7 +42,6 @@ struct Splitter* splitter_new()
  */
 void splitter_free(struct Splitter* ptr)
 {
-    xmlBufferFree(ptr->p_head);
     free(ptr);
 }
 
@@ -53,27 +50,9 @@ void splitter_split_file(struct Splitter* p_splitter, const char* infile, const 
     htmlDocPtr p_document = NULL;
     p_document = htmlParseFile(infile, "UTF-8");
 
-    extract_head(p_splitter, p_document);
     handle_body(p_splitter, p_document, outdir);
 
     xmlFreeDoc(p_document);
-}
-
-void extract_head(struct Splitter* p_splitter, htmlDocPtr p_document)
-{
-    xmlXPathContextPtr p_context = NULL;
-    xmlXPathObjectPtr p_results  = NULL;
-
-    p_context = xmlXPathNewContext(p_document);
-    p_results = xmlXPathEvalExpression(BAD_CAST("/html/head"), p_context);
-
-    if (!xmlNodeDump(p_splitter->p_head, p_document, p_results->nodesetval->nodeTab[0], 2, 1)) {
-        fprintf(stderr, "Failed to extract <head> element.\n");
-        exit(1);
-    }
-
-    xmlXPathFreeObject(p_results);
-    xmlXPathFreeContext(p_context);
 }
 
 void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char* outdir)
