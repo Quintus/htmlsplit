@@ -1,3 +1,5 @@
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -9,6 +11,7 @@
 #include <libxml/HTMLtree.h>
 #include "config.h"
 #include "split.h"
+#include "verbose.h"
 
 /* The BAD_CAST() macro comes from libxml2 itself,
  * see http://www.xmlsoft.org/html/libxml-xmlstring.html. */
@@ -69,7 +72,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char*
     total     = p_results->nodesetval->nodeNr;
     xmlXPathFreeObject(p_results);
 
-    printf("Found %d nodes for splitting.\n", total);
+    verbprintf("Found %d nodes for splitting.\n", total);
 
     /* Now iterate them all. We do the splitting by deleting every node
      * on our level before the last target, and everything behind the
@@ -149,7 +152,7 @@ void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
         nodecount++;
     }
 
-    printf("Going to temporaryly delete %d following nodes.\n", nodecount);
+    verbprintf("Going to temporaryly delete %d following nodes.\n", nodecount);
 
     /* Allocate the space we need for storing */
     nodestore = (xmlNodePtr*) malloc(nodecount * sizeof(xmlNodePtr));
@@ -159,7 +162,7 @@ void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
     while (p_next_node) {
         xmlNodePtr p_next_next_node = xmlNextElementSibling(p_next_node);
 
-        printf("Removing <%s>\n", p_next_node->name);
+        verbprintf("Removing <%s>\n", p_next_node->name);
         xmlUnlinkNode(p_next_node);
 
         nodestore[i++] = p_next_node;
@@ -192,7 +195,7 @@ void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
     }
 
     /* Allocate the space we need for storing */
-    printf("Going to temporaryly delete %d preceeding nodes.\n", nodecount);
+    verbprintf("Going to temporaryly delete %d preceeding nodes.\n", nodecount);
     nodestore = (xmlNodePtr*) malloc(nodecount * sizeof(xmlNodePtr));
 
     /* Store all the nodes and unlink them from the document */
@@ -221,7 +224,7 @@ void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
     /* Re-add the unlinked nodes */
     p_next_node = p_node;
     for(i=0; i < p_splitter->num_following_nodes; i++) {
-        printf("Re-Adding following node %d (%s).\n", i, p_splitter->p_following_nodes[i]->name);
+        verbprintf("Re-Adding following node %d (%s).\n", i, p_splitter->p_following_nodes[i]->name);
 
         xmlAddNextSibling(p_next_node, p_splitter->p_following_nodes[i]);
         p_next_node = xmlNextElementSibling(p_next_node);
@@ -245,7 +248,7 @@ void reinsert_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
     /* Re-add the unlinked nodes */
     p_prev_node = p_node;
     for(i=0; i < p_splitter->num_preceeding_nodes; i++) {
-        printf("Re-Adding preceeding node %d (%s).\n", i, p_splitter->p_preceeding_nodes[i]->name);
+        verbprintf("Re-Adding preceeding node %d (%s).\n", i, p_splitter->p_preceeding_nodes[i]->name);
 
         xmlAddPrevSibling(p_prev_node, p_splitter->p_preceeding_nodes[i]);
         p_prev_node = xmlPreviousElementSibling(p_prev_node);
@@ -259,7 +262,7 @@ void reinsert_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
 
 void write_file(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile)
 {
-    printf("Writing file '%s'\n", targetfile);
+    verbprintf("Writing file '%s'\n", targetfile);
 
     FILE* p_file = fopen(targetfile, "w");
     htmlDocDump(p_file, p_document);
