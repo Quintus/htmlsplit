@@ -118,6 +118,8 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char*
             xmlNodePtr p_end_node   = NULL; /* End split point; will be deleted */
             xmlNodePtr p_parent_node = NULL; /* Common parent */
 
+            printf("------------------------\n");
+
             /* As we modify the document using the following functions,
              * we invalidate the XPath result and must query for each
              * tag anew. */
@@ -144,17 +146,10 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char*
             reinsert_preceeding_nodes(p_splitter, p_start_node);
 
             /* Resurrect following parts */
-            if (i == 0) {
-                /* TODO: Maybe a better way so i == 0 doesn’t need special treatment? */
+            if (i < total) {
                 xmlXPathFreeObject(p_results);
 
                 p_results  = xmlXPathNodeEval(p_parent_node, BAD_CAST("descendant::*"), p_context);
-                p_end_node = p_results->nodesetval->nodeTab[p_results->nodesetval->nodeNr - 1];
-            }
-            else if (i < total) {
-                xmlXPathFreeObject(p_results);
-
-                p_results  = xmlXPathNodeEval(p_start_node, BAD_CAST("following-sibling::*"), p_context);
                 p_end_node = p_results->nodesetval->nodeTab[p_results->nodesetval->nodeNr - 1];
             }
             else {
