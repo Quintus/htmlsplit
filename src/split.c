@@ -128,6 +128,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char*
             }
             if (i < total) {
                 p_end_node = p_results->nodesetval->nodeTab[i];
+                p_parent_node = p_end_node->parent;
             }
 
             /* Remove those parts we are not interested in */
@@ -143,16 +144,21 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char*
             reinsert_preceeding_nodes(p_splitter, p_start_node);
 
             /* Resurrect following parts */
-            if (i < total) {
+            if (i == 0) {
+                /* TODO: Maybe a better way so i == 0 doesn’t need special treatment? */
                 xmlXPathFreeObject(p_results);
 
-                /* Following parts are more complicated because the trailing splitting
-                 * point was removed. We need to append at the end of the section of
-                 * the current splitting point. */
+                p_results  = xmlXPathNodeEval(p_parent_node, BAD_CAST("descendant::*"), p_context);
+                p_end_node = p_results->nodesetval->nodeTab[p_results->nodesetval->nodeNr - 1];
+            }
+            else if (i < total) {
+                xmlXPathFreeObject(p_results);
+
                 p_results  = xmlXPathNodeEval(p_start_node, BAD_CAST("following-sibling::*"), p_context);
                 p_end_node = p_results->nodesetval->nodeTab[p_results->nodesetval->nodeNr - 1];
             }
             else {
+                /* No following part in last iteration */
                 p_end_node = NULL;
             }
 
