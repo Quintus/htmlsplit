@@ -298,6 +298,6 @@ void write_file(struct Splitter* p_splitter, htmlDocPtr p_document, const char* 
     printf("Writing file '%s'\n", targetfile);
 
     FILE* p_file = fopen(targetfile, "w");
-    xmlDocFormatDump(p_file, p_document, 1); /* TODO: Set global formatting option on libxml2 */
+    htmlDocDump(p_file, p_document);
     fclose(p_file);
 }
