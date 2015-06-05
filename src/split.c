@@ -17,7 +17,9 @@ static void extract_head(struct Splitter* p_splitter, htmlDocPtr p_document);
 static void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char* outdir);
 static void write_file(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile);
 static void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
+static void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node, htmlDocPtr p_document);
 static void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
+static void reinsert_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 
 /**
  * Create a new Splitter struct. The result must be
@@ -96,6 +98,13 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char*
 
     printf("Found %d nodes for splitting.\n", total);
 
+    /* Now iterate them all. We do the splitting by deleting every node
+     * on our level before the last target, and everything behind the
+     * current target. Graphically:
+     *
+     *   xxxxxxx<>.........<>xxxxxxxx
+     *
+     * where x will be deleted, <> is a split point, and . is kept. */
     for(i = 0; i < total; i++) {
         xmlNodePtr p_node = NULL;
 
@@ -107,7 +116,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char*
 
         printf("Examining node %d.\n", i);
 
-        /* slice_preceeding_nodes(p_splitter, p_node); */
+        slice_preceeding_nodes(p_splitter, p_node, p_document);
         slice_following_nodes(p_splitter, p_node);
 
         memset(targetfilename, '\0', PATH_MAX);
@@ -115,7 +124,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char*
         write_file(p_splitter, p_document, targetfilename);
 
         reinsert_following_nodes(p_splitter, p_node);
-        /* reinsert_preceeding_nodes(p_splitter, p_node); */
+        reinsert_preceeding_nodes(p_splitter, p_node);
 
         xmlXPathFreeObject(p_results);
     }
@@ -141,7 +150,7 @@ void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
     printf("Going to temporaryly delete %d following nodes.\n", nodecount);
 
     /* Allocate the space we need for storing */
-    nodestore = malloc(nodecount * sizeof(xmlNodePtr));
+    nodestore = (xmlNodePtr*) malloc(nodecount * sizeof(xmlNodePtr));
 
     /* Store all the nodes and unlink them from the document */
     p_next_node = xmlNextElementSibling(p_node);
@@ -157,6 +166,55 @@ void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
     p_splitter->p_following_nodes   = nodestore;
 }
 
+void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node, htmlDocPtr p_document)
+{
+    xmlNodePtr p_prev_splitpoint = NULL;
+    xmlNodePtr p_prev_node;
+    xmlNodePtr* nodestore = NULL;
+    int nodecount = 0;
+    int i = 0;
+    xmlXPathContextPtr p_context = NULL;
+    xmlXPathObjectPtr p_results  = NULL;
+
+    /* Find any previous split point node up to which we need
+     * to keep the nodes in-between. */
+    p_context = xmlXPathNewContext(p_document);
+    p_results = xmlXPathNodeEval(p_node, BAD_CAST("preceding-sibling::h1"), p_context); /* TODO: Make configurable */
+
+    /* On the first split there is no previous split point. */
+    if (p_results->nodesetval->nodeNr > 0) {
+        p_prev_splitpoint = p_results->nodesetval->nodeTab[0];
+    }
+    xmlXPathFreeObject(p_results);
+    xmlXPathFreeContext(p_context);
+    p_results = NULL;
+    p_context = NULL;
+
+    p_prev_node = p_prev_splitpoint; /* Previous splitpoint itself must be removed as well */
+    while (p_prev_node) {
+        p_prev_node = xmlPreviousElementSibling(p_prev_node);
+        nodecount++;
+    }
+    nodecount--; /* NULL element not required */
+
+    /* Allocate the space we need for storing */
+    printf("Going to temporaryly delete %d preceeding nodes.\n", nodecount);
+    nodestore = (xmlNodePtr*) malloc(nodecount * sizeof(xmlNodePtr));
+
+    /* Store all the nodes and unlink them from the document */
+    p_prev_node = p_prev_splitpoint;
+    while (p_prev_node && i < nodecount) {
+        xmlNodePtr p_prev_prev_node = xmlPreviousElementSibling(p_prev_node);
+        xmlUnlinkNode(p_prev_node);
+
+        nodestore[i++] = p_prev_node;
+        p_prev_node = p_prev_prev_node;
+    }
+
+    p_splitter->num_preceeding_nodes = nodecount;
+    p_splitter->p_preceeding_nodes   = nodestore;
+}
+
 void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
 {
     xmlNodePtr p_next_node = NULL;
@@ -165,7 +223,7 @@ void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
     /* Re-add the unlinked nodes */
     p_next_node = p_node;
     for(i=0; i < p_splitter->num_following_nodes; i++) {
-        printf("Re-Adding following node %d.\n", i);
+        printf("Re-Adding following node %d (%s).\n", i, p_splitter->p_following_nodes[i]->name);
 
         xmlAddNextSibling(p_next_node, p_splitter->p_following_nodes[i]);
         p_next_node = xmlNextElementSibling(p_next_node);
@@ -175,6 +233,26 @@ void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
     free(p_splitter->p_following_nodes);
     p_splitter->p_following_nodes = NULL;
     p_splitter->num_following_nodes = 0;
+}
+
+void reinsert_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
+{
+    xmlNodePtr p_prev_node = NULL;
+    int i = 0;
+
+    /* Re-add the unlinked nodes */
+    p_prev_node = p_node;
+    for(i=0; i < p_splitter->num_preceeding_nodes; i++) {
+        printf("Re-Adding preceeding node %d (%s).\n", i, p_splitter->p_preceeding_nodes[i]->name);
+
+        xmlAddPrevSibling(p_prev_node, p_splitter->p_preceeding_nodes[i]);
+        p_prev_node = xmlPreviousElementSibling(p_prev_node);
+    }
+
+    /* Cleanup */
+    free(p_splitter->p_preceeding_nodes);
+    p_splitter->p_preceeding_nodes = NULL;
+    p_splitter->num_preceeding_nodes = 0;
 }
 
 void write_file(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile)
