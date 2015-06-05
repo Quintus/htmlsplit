@@ -16,7 +16,7 @@
 /* The BAD_CAST() macro comes from libxml2 itself,
  * see http://www.xmlsoft.org/html/libxml-xmlstring.html. */
 
-static void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char* outdir);
+static void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document);
 static void write_file(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile);
 static void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
@@ -48,17 +48,17 @@ void splitter_free(struct Splitter* ptr)
     free(ptr);
 }
 
-void splitter_split_file(struct Splitter* p_splitter, const char* infile, const char* outdir)
+void splitter_split_file(struct Splitter* p_splitter)
 {
     htmlDocPtr p_document = NULL;
-    p_document = htmlParseFile(infile, "UTF-8");
+    p_document = htmlParseFile(p_splitter->infile, "UTF-8");
 
-    handle_body(p_splitter, p_document, outdir);
+    handle_body(p_splitter, p_document);
 
     xmlFreeDoc(p_document);
 }
 
-void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char* outdir)
+void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
 {
     xmlXPathContextPtr p_context = NULL;
     xmlXPathObjectPtr p_results  = NULL;
@@ -105,7 +105,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char*
 
         /* Write out */
         memset(targetfilename, '\0', PATH_MAX);
-        sprintf(targetfilename, "%s/%04d.html", outdir, i);
+        sprintf(targetfilename, "%s/%04d.html", p_splitter->outdir, i);
         write_file(p_splitter, p_document, targetfilename);
 
         /* Resurrect preceeding parts */

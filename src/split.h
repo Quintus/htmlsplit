@@ -7,6 +7,8 @@
 struct Splitter {
     unsigned short level;
     const char* langtag;
+    char infile[PATH_MAX];
+    char outdir[PATH_MAX];
 
     /***** Internal use *****/
     xmlNodePtr* p_following_nodes;
@@ -18,6 +20,6 @@ struct Splitter {
 struct Splitter* splitter_new();
 void splitter_free(struct Splitter* ptr);
 
-void splitter_split_file(struct Splitter* p_splitter, const char* infile, const char* outdir);
+void splitter_split_file(struct Splitter* p_splitter);
 
 #endif
