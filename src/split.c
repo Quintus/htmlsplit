@@ -71,66 +71,57 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document, const char*
 
     printf("Found %d nodes for splitting.\n", total);
 
-    /* If no split points were found we can just dump everything
-     * into the first “part”. */
-    memset(targetfilename, '\0', PATH_MAX);
-    sprintf(targetfilename, "%s/%04d.html", outdir, 0);
-    if (total == 0) {
-        write_file(p_splitter, p_document, targetfilename);
-    }
-    else {
-        /* Now iterate them all. We do the splitting by deleting every node
-         * on our level before the last target, and everything behind the
-         * current target. Graphically:
-         *
-         *   xxxxxxx<>.........<>xxxxxxxx
-         *
-         * where x will be deleted, <> is a split point, and . is kept. */
-        for(i = 0; i <= total; i++) {
-            xmlNodePtr p_start_node = NULL; /* Start split point; will be kept */
-            xmlNodePtr p_end_node   = NULL; /* End split point; will be deleted */
-            xmlNodePtr p_parent_node = NULL; /* Common parent */
+    /* Now iterate them all. We do the splitting by deleting every node
+     * on our level before the last target, and everything behind the
+     * current target. Graphically:
+     *
+     *   xxxxxxx<>.........<>xxxxxxxx
+     *
+     * where x will be deleted, <> is a split point, and . is kept. */
+    for(i = 0; i <= total; i++) {
+        xmlNodePtr p_start_node = NULL; /* Start split point; will be kept */
+        xmlNodePtr p_end_node   = NULL; /* End split point; will be deleted */
+        xmlNodePtr p_parent_node = NULL; /* Common parent */
 
-            /* As we modify the document using the following functions,
-             * we invalidate the XPath result and must query for each
-             * tag anew. */
-            p_results = xmlXPathEvalExpression(BAD_CAST("//h1"), p_context); /* TODO: use p_splitter->level instead of <h1> */
+        /* As we modify the document using the following functions,
+         * we invalidate the XPath result and must query for each
+         * tag anew. */
+        p_results = xmlXPathEvalExpression(BAD_CAST("//h1"), p_context); /* TODO: use p_splitter->level instead of <h1> */
 
-            if (i > 0) {
-                p_start_node = p_results->nodesetval->nodeTab[i-1];
-            }
-            if (i < total) {
-                p_end_node = p_results->nodesetval->nodeTab[i];
-                p_parent_node = p_end_node->parent;
-            }
-
-            /* Remove those parts we are not interested in */
-            slice_preceeding_nodes(p_splitter, p_start_node);
-            slice_following_nodes(p_splitter, p_end_node);
-
-            /* Write out */
-            memset(targetfilename, '\0', PATH_MAX);
-            sprintf(targetfilename, "%s/%04d.html", outdir, i);
-            write_file(p_splitter, p_document, targetfilename);
-
-            /* Resurrect preceeding parts */
-            reinsert_preceeding_nodes(p_splitter, p_start_node);
-
-            /* Resurrect following parts */
-            if (i < total) {
-                xmlXPathFreeObject(p_results);
-
-                p_results  = xmlXPathNodeEval(p_parent_node, BAD_CAST("child::*"), p_context);
-                p_end_node = p_results->nodesetval->nodeTab[p_results->nodesetval->nodeNr - 1];
-            }
-            else {
-                /* No following part in last iteration */
-                p_end_node = NULL;
-            }
-
-            reinsert_following_nodes(p_splitter, p_end_node);
-            xmlXPathFreeObject(p_results);
+        if (i > 0) {
+            p_start_node = p_results->nodesetval->nodeTab[i-1];
         }
+        if (i < total) {
+            p_end_node = p_results->nodesetval->nodeTab[i];
+            p_parent_node = p_end_node->parent;
+        }
+
+        /* Remove those parts we are not interested in */
+        slice_preceeding_nodes(p_splitter, p_start_node);
+        slice_following_nodes(p_splitter, p_end_node);
+
+        /* Write out */
+        memset(targetfilename, '\0', PATH_MAX);
+        sprintf(targetfilename, "%s/%04d.html", outdir, i);
+        write_file(p_splitter, p_document, targetfilename);
+
+        /* Resurrect preceeding parts */
+        reinsert_preceeding_nodes(p_splitter, p_start_node);
+
+        /* Resurrect following parts */
+        if (i < total) {
+            xmlXPathFreeObject(p_results);
+
+            p_results  = xmlXPathNodeEval(p_parent_node, BAD_CAST("child::*"), p_context);
+            p_end_node = p_results->nodesetval->nodeTab[p_results->nodesetval->nodeNr - 1];
+        }
+        else {
+            /* No following part in last iteration */
+            p_end_node = NULL;
+        }
+
+        reinsert_following_nodes(p_splitter, p_end_node);
+        xmlXPathFreeObject(p_results);
     }
 
     xmlXPathFreeContext(p_context);
