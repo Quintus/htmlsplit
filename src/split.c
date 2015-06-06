@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
 #include <linux/limits.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -26,10 +27,16 @@ static void reinsert_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_
 /**
  * Create a new Splitter struct. The result must be
  * freed with splitter_free() when you are done with it.
+ * Returns NULL if malloc() fails.
  */
 struct Splitter* splitter_new()
 {
     struct Splitter* ptr = (struct Splitter*) malloc(sizeof(struct Splitter));
+
+    if (!ptr) {
+        perror("Failed to allocate Splitter struct");
+        return NULL;
+    }
 
     /* Sanitize memory */
     memset(ptr, '\0', sizeof(struct Splitter));
@@ -52,6 +59,11 @@ void splitter_split_file(struct Splitter* p_splitter)
 {
     htmlDocPtr p_document = NULL;
     p_document = htmlParseFile(p_splitter->infile, "UTF-8");
+
+    if (!p_document) {
+        fprintf(stderr, "Failed to parse document file '%s'\n", p_splitter->infile);
+        exit(ERR_PARSE);
+    }
 
     handle_body(p_splitter, p_document);
 
@@ -157,6 +169,11 @@ void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
     /* Allocate the space we need for storing */
     nodestore = (xmlNodePtr*) malloc(nodecount * sizeof(xmlNodePtr));
 
+    if (!nodestore) {
+        perror("Failed to allocate memory for following-nodes store");
+        exit(ERR_MEM);
+    }
+
     /* Store all the nodes and unlink them from the document */
     p_next_node = p_node; /* Trailing next split point must be removed */
     while (p_next_node) {
@@ -197,6 +214,11 @@ void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
     /* Allocate the space we need for storing */
     verbprintf("Going to temporaryly delete %d preceeding nodes.\n", nodecount);
     nodestore = (xmlNodePtr*) malloc(nodecount * sizeof(xmlNodePtr));
+
+    if (!nodestore) {
+        perror("Failed to allocate memory for preceeding-nodes store");
+        exit(ERR_MEM);
+    }
 
     /* Store all the nodes and unlink them from the document */
     p_prev_node = xmlPreviousElementSibling(p_node);  /* Previous splitpoint itself must not be removed */
@@ -265,6 +287,13 @@ void write_file(struct Splitter* p_splitter, htmlDocPtr p_document, const char* 
     verbprintf("Writing file '%s'\n", targetfile);
 
     FILE* p_file = fopen(targetfile, "w");
-    htmlDocDump(p_file, p_document);
-    fclose(p_file);
+    if (p_file) {
+        htmlDocDump(p_file, p_document);
+        fclose(p_file);
+    }
+    else {
+        int errsav = errno;
+        printf("Failed to open file '%s': %s\n", targetfile, strerror(errsav));
+        exit(ERR_IO);
+    }
 }

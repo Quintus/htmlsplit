@@ -17,6 +17,17 @@ struct Splitter {
     int num_preceeding_nodes;
 };
 
+/**
+ * Error codes used by this program.
+ */
+enum errcode {
+    ERR_SUCCESS = 0,
+    ERR_CLI,
+    ERR_IO,
+    ERR_PARSE,
+    ERR_MEM
+};
+
 struct Splitter* splitter_new();
 void splitter_free(struct Splitter* ptr);
 

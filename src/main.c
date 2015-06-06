@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdbool.h>
-#include <unistd.h>
 #include <string.h>
+#include <locale.h>
+#include <unistd.h>
 #include <linux/limits.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -39,24 +40,35 @@ static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
             break;
         default: /* '?' */
             print_usage(argv[0]);
-            return false;
+            exit(ERR_CLI);
         }
     }
 
     return true;
 }
 
+void cleanup()
+{
+    xmlCleanupParser();
+}
+
 int main(int argc, char* argv[])
 {
+    setlocale(LC_ALL, "");
     xmlInitParser();
+
+    atexit(cleanup);
 
     struct Splitter* p_splitter = splitter_new();
 
-    if (parse_argv(argc, argv, p_splitter)) {
-        splitter_split_file(p_splitter);
-        splitter_free(p_splitter);
+    if (!p_splitter) {
+        fprintf(stderr, "Failed to initialize Splitter instance\n");
+        exit(ERR_MEM);
     }
 
-    xmlCleanupParser();
+    parse_argv(argc, argv, p_splitter);
+    splitter_split_file(p_splitter);
+    splitter_free(p_splitter);
+
     return 0;
 }
