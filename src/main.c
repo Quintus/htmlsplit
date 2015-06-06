@@ -4,7 +4,7 @@
 #include <locale.h>
 #include <signal.h>
 #include <unistd.h>
-#include <linux/limits.h>
+#include <limits.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>

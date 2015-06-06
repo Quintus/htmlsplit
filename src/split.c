@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <linux/limits.h>
+#include <limits.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
