@@ -18,7 +18,7 @@
  * see http://www.xmlsoft.org/html/libxml-xmlstring.html. */
 
 static void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document);
-static void write_file(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile);
+static void write_part(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile);
 static void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
@@ -48,6 +48,7 @@ struct Splitter* splitter_new()
     ptr->num_preceeding_nodes = 0;
     ptr->terminate            = false;
     strcpy(ptr->splitexpr, "//h1"); /* default split point xpath */
+    strcpy(ptr->stdoutsep, "<!-- HTMLSPLIT -->"); /* default stdout split separator */
 
     return ptr;
 }
@@ -132,9 +133,18 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
         slice_following_nodes(p_splitter, p_end_node);
 
         /* Write out */
-        memset(targetfilename, '\0', PATH_MAX);
-        sprintf(targetfilename, "%s/%04d.html", p_splitter->outdir, i);
-        write_file(p_splitter, p_document, targetfilename);
+        if (strlen(p_splitter->outdir) == 0) { /* stdout requested */
+            write_part(p_splitter, p_document, NULL);
+
+            if (i < total) {
+                printf("%s\n", p_splitter->stdoutsep);
+            }
+        }
+        else {
+            memset(targetfilename, '\0', PATH_MAX);
+            sprintf(targetfilename, "%s/%04d.html", p_splitter->outdir, i);
+            write_part(p_splitter, p_document, targetfilename);
+        }
 
         /* Resurrect deleted parts */
         reinsert_preceeding_nodes(p_splitter, p_start_node);
@@ -283,18 +293,36 @@ void reinsert_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
     p_splitter->num_preceeding_nodes = 0;
 }
 
-void write_file(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile)
+/**
+ * Write out the document in its current state. If `targetfile' is NULL,
+ * the document is output to the standard output. If it isn’t, the document
+ * is written to that file.
+ */
+void write_part(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile)
 {
-    verbprintf("Writing file '%s'\n", targetfile);
+    if (targetfile) {
+        verbprintf("Writing file '%s'\n", targetfile);
 
-    FILE* p_file = fopen(targetfile, "w");
-    if (p_file) {
-        htmlDocDump(p_file, p_document);
-        fclose(p_file);
+        FILE* p_file = fopen(targetfile, "w");
+        if (p_file) {
+            htmlDocDump(p_file, p_document);
+            fclose(p_file);
+        }
+        else {
+            int errsav = errno;
+            printf("Failed to open file '%s': %s\n", targetfile, strerror(errsav));
+            exit(ERR_IO);
+        }
     }
-    else {
-        int errsav = errno;
-        printf("Failed to open file '%s': %s\n", targetfile, strerror(errsav));
-        exit(ERR_IO);
+    else { /* Output to stdout */
+        xmlChar* xmlstr = NULL;
+        int size = 0;
+
+        verbprintf("Writing to standard output\n", targetfile);
+        htmlDocDumpMemory(p_document, &xmlstr, &size);
+
+        printf("%s", (char*) xmlstr);
+
+        xmlFree(xmlstr);
     }
 }

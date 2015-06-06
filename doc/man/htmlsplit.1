@@ -8,7 +8,7 @@ htmlsplit \- Split large HTML files into smaller HTML files
 
 .B htmlsplit
 .R [-i \fIFILE\fR]
-.R [-o \fIDIR\fR]
+.R { [-o \fIDIR\fR] | [-s \fISEP\fR] }
 .R [-x \fIXPATH\fR]
 .R [-v]
 
@@ -42,7 +42,16 @@ Write output to the given directory. For each section found in the
 input, one file with format \fIxxxx.html\fR is created in this
 directory, where \fIxxxx\fR is replaced by a consecutive number
 corresponding to the section found. The text part before the first
-split point will receive the file name \fI0000.html\fR.
+split point will receive the file name \fI0000.html\fR. If this option
+is not given, output will be printed to the standard output. See also
+option \fB-s\fR.
+
+.TP
+.B -s \fISEP\fR
+When outputting to the standard output (i.e. \fB-o\fR was not given),
+use this as the separator between the documents. It defaults to
+\fB<!-- HTMLSPLIT -->\fR if not given. May not be longer than 1023
+bytes. A newline is automatically appended to this.
 
 .TP
 .B -x \fIXPATH\fR

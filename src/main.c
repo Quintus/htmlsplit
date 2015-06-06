@@ -25,7 +25,7 @@ static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
 {
     int curopt = 0;
 
-    while ((curopt = getopt(argc, argv, "vhi:o:x:")) > 0) {
+    while ((curopt = getopt(argc, argv, "vhi:o:x:s:")) > 0) {
         switch (curopt) {
         case 'v':
             g_htmlsplit_verbose = true;
@@ -38,6 +38,9 @@ static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
             break;
         case 'x':
             strcpy(p_splitter->splitexpr, optarg);
+            break;
+        case 's':
+            strcpy(p_splitter->stdoutsep, optarg);
             break;
         case 'h':
             print_usage(argv[0]);

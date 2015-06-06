@@ -8,6 +8,7 @@ struct Splitter {
     char splitexpr[4096];
     char infile[PATH_MAX];
     char outdir[PATH_MAX];
+    char stdoutsep[1024];
 
     /***** Internal use *****/
     xmlNodePtr* p_following_nodes;
