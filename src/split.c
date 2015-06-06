@@ -18,9 +18,9 @@
 /* The BAD_CAST() macro comes from libxml2 itself,
  * see http://www.xmlsoft.org/html/libxml-xmlstring.html. */
 
-static htmlDocPtr read_input(struct Splitter* p_splitter);
-static void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document);
-static void write_part(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile);
+static void read_input(struct Splitter* p_splitter);
+static void handle_body(struct Splitter* p_splitter);
+static void write_part(struct Splitter* p_splitter, const char* targetfile);
 static void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
@@ -65,24 +65,23 @@ struct Splitter* splitter_new()
  */
 void splitter_free(struct Splitter* ptr)
 {
+    xmlFreeDoc(ptr->p_document);
     free(ptr);
 }
 
 void splitter_split_file(struct Splitter* p_splitter)
 {
-    htmlDocPtr p_document = read_input(p_splitter);
+    read_input(p_splitter);
 
-    if (!p_document) {
+    if (!p_splitter->p_document) {
         fprintf(stderr, "Failed to parse document file '%s'.\n", p_splitter->infile);
         exit(ERR_PARSE);
     }
 
-    handle_body(p_splitter, p_document);
-
-    xmlFreeDoc(p_document);
+    handle_body(p_splitter);
 }
 
-void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
+void handle_body(struct Splitter* p_splitter)
 {
     xmlXPathContextPtr p_context = NULL;
     xmlXPathObjectPtr p_results  = NULL;
@@ -91,7 +90,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
     int total = 0;
 
     /* Determine total number of split points */
-    p_context = xmlXPathNewContext(p_document);
+    p_context = xmlXPathNewContext(p_splitter->p_document);
     p_results = xmlXPathEvalExpression(BAD_CAST(p_splitter->splitexpr), p_context);
 
     if (!p_results->nodesetval) {
@@ -150,7 +149,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
 
         /* Write out */
         if (strlen(p_splitter->outdir) == 0) { /* stdout requested */
-            write_part(p_splitter, p_document, NULL);
+            write_part(p_splitter, NULL);
 
             if (i < total) { /* Separator */
                 printf("%s\n", p_splitter->stdoutsep);
@@ -159,7 +158,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
         else {
             memset(targetfilename, '\0', PATH_MAX);
             sprintf(targetfilename, "%s/%04d.html", p_splitter->outdir, i);
-            write_part(p_splitter, p_document, targetfilename);
+            write_part(p_splitter, targetfilename);
         }
 
         if (p_splitter->interlink)
@@ -317,14 +316,14 @@ void reinsert_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
  * the document is output to the standard output. If it isn’t, the document
  * is written to that file.
  */
-void write_part(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile)
+void write_part(struct Splitter* p_splitter, const char* targetfile)
 {
     if (targetfile) {
         verbprintf("Writing file '%s'\n", targetfile);
 
         FILE* p_file = fopen(targetfile, "w");
         if (p_file) {
-            htmlDocDump(p_file, p_document);
+            htmlDocDump(p_file, p_splitter->p_document);
             fclose(p_file);
         }
         else {
@@ -338,7 +337,7 @@ void write_part(struct Splitter* p_splitter, htmlDocPtr p_document, const char* 
         int size = 0;
 
         verbprintf("Writing to standard output\n", targetfile);
-        htmlDocDumpMemory(p_document, &xmlstr, &size);
+        htmlDocDumpMemory(p_splitter->p_document, &xmlstr, &size);
 
         printf("%s", (char*) xmlstr);
 
@@ -406,9 +405,9 @@ void remove_interlinks(struct Splitter* p_splitter, xmlNodePtr p_interlinks_node
  * Read input from either standard input or a file, depending on
  * the contents of the `infile` attribute of `p_splitter`.
  */
-htmlDocPtr read_input(struct Splitter* p_splitter)
+void read_input(struct Splitter* p_splitter)
 {
-    htmlDocPtr p_document = NULL;
+    p_splitter->p_document = NULL;
 
     if (strlen(p_splitter->infile) == 0) { /* stdin requested */
         char* p_buffer       = NULL;
@@ -427,15 +426,13 @@ htmlDocPtr read_input(struct Splitter* p_splitter)
         verbprintf("Read %li bytes from standard input.\n", size);
 
         p_xmlbuffer = xmlCharStrndup(p_buffer, size);
-        p_document  = htmlReadDoc(p_xmlbuffer, "(stdin)", "UTF-8", 0);
+        p_splitter->p_document = htmlReadDoc(p_xmlbuffer, "(stdin)", "UTF-8", 0);
 
         xmlFree(p_xmlbuffer);
         free(p_buffer);
     }
     else { /* File requested */
         verbprintf("Reading file '%s'.\n", p_splitter->infile);
-        p_document = htmlParseFile(p_splitter->infile, "UTF-8");
+        p_splitter->p_document = htmlParseFile(p_splitter->infile, "UTF-8");
     }
-
-    return p_document;
 }

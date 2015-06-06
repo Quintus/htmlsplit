@@ -14,6 +14,7 @@ struct Splitter {
     int tocdepth;
 
     /***** Internal use *****/
+    htmlDocPtr p_document;
     xmlNodePtr* p_following_nodes;
     xmlNodePtr* p_preceeding_nodes;
     int num_following_nodes;
