@@ -130,22 +130,10 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
         sprintf(targetfilename, "%s/%04d.html", p_splitter->outdir, i);
         write_file(p_splitter, p_document, targetfilename);
 
-        /* Resurrect preceeding parts */
+        /* Resurrect deleted parts */
         reinsert_preceeding_nodes(p_splitter, p_start_node);
+        reinsert_following_nodes(p_splitter, p_parent_node);
 
-        /* Resurrect following parts */
-        if (i < total) {
-            xmlXPathFreeObject(p_results);
-
-            p_results  = xmlXPathNodeEval(p_parent_node, BAD_CAST("child::*"), p_context);
-            p_end_node = p_results->nodesetval->nodeTab[p_results->nodesetval->nodeNr - 1];
-        }
-        else {
-            /* No following part in last iteration */
-            p_end_node = NULL;
-        }
-
-        reinsert_following_nodes(p_splitter, p_end_node);
         xmlXPathFreeObject(p_results);
     }
 
@@ -246,7 +234,6 @@ void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
 
 void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
 {
-    xmlNodePtr p_next_node = NULL;
     int i = 0;
 
     /* If this was the last part, there was nothing following. */
@@ -254,12 +241,10 @@ void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
         return;
 
     /* Re-add the unlinked nodes */
-    p_next_node = p_node;
     for(i=0; i < p_splitter->num_following_nodes; i++) {
         verbprintf("Re-Adding following node %d (%s).\n", i, p_splitter->p_following_nodes[i]->name);
 
-        xmlAddNextSibling(p_next_node, p_splitter->p_following_nodes[i]);
-        p_next_node = xmlNextElementSibling(p_next_node);
+        xmlAddChild(p_node, p_splitter->p_following_nodes[i]);
     }
 
     /* Cleanup */
