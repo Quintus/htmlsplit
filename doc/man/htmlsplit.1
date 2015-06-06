@@ -1,0 +1,86 @@
+.TH HTMLSPLIT 1 2015-06-06 "Marvin Gülker" "User Commands"
+.mso www.tmac
+
+.SH NAME
+htmlsplit \- Split large HTML files into smaller HTML files
+
+.SH SYNOPSIS
+
+.B htmlsplit
+.R [-i \fIFILE\fR]
+.R [-o \fIDIR\fR]
+
+.SH DESCRIPTION
+
+.PP
+The htmlsplit command splits a large HTML file into several smaller
+HTML files by parsing it and applying an XPath query repeatedly onto
+the larger HTML document.
+
+.SH OPTIONS
+
+.TP
+.B -i \fIFILE\fR
+Read input from the given HTML file. If this option is ommitted, input
+is read from standard input instead.
+
+.TP
+.B -o \fIDIR\fR
+Write output to the given directory. For each section found in the
+input, one file with format \fIxxxx.html\fR is created in this
+directory, where \fIxxxx\fR is replaced by a consecutive number
+corresponding to the section found. The text part before the first
+split point will receive the file name \fI0000.html\fR.
+
+.TP
+.B -v
+Verbose run. This option will make \fBhtmlsplit\fR output more
+information during its operation.
+
+.SH BUGS
+
+.PP
+If the split points found by this program do not have the same parent
+node (e.g. all in the \fB<body>\fR tag on the same level or inside
+the same \fB<div>\fR), then unpredictable behaviour will result. They
+may be at any depth (and their surroundings will be kept), but they
+must be on the same depth. Consider this example:
+
+.PP
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Bad example</title>
+      </head>
+      <body>
+        <h1>Split point one</h1>
+        <p>Text</p>
+        <div class="baddiv">
+          <h1>Split point two</h1>
+          <p>Text</p>
+        </div>
+      </body>
+    </html>
+
+.PP
+The above will result in undefined behaviour, because one split point
+is found directly below the \fB<body>\fR tag, and another inside a
+nested \fB<div>\fR tag. Thus, ensure that all your split points have
+the same parent; in the above example, this could be achieved by
+either moving the first \fB<h1>\fR and the following \fB<p>\fR into
+the \fB<div>\fR, or by deleting the \fB<div>\fR and assigning its
+content to the parent \fB<body>\fR tag.
+
+.SH NOTES
+
+.PP
+Please report any bugs you find to
+.URL "mailto:m-guelker@guelkerdev.de" "Marvin Gülker".
+
+.PP
+The project’s bugtracker and sourcecode can be browser on the WWW at
+.URL "https://github.com/Quintus/htmlsplit" "GitHub".
+
+.SH SEE ALSO
+
+.BR split(1)
