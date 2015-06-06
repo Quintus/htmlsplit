@@ -8,7 +8,7 @@ set(CMAKE_MODULE_PATH ${HTMLSPLIT_SOURCE_DIR}/cmake/modules)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -std=c99")
 
-add_definitions("-D_POSIX_C_SOURCE=2")
+add_definitions("-D_POSIX_C_SOURCE=200112L")
 
 ########################################
 # Dependencies
