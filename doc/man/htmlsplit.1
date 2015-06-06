@@ -9,6 +9,7 @@ htmlsplit \- Split large HTML files into smaller HTML files
 .B htmlsplit
 .R [-i \fIFILE\fR]
 .R { [-o \fIDIR\fR] | [-s \fISEP\fR] }
+.R [-p \fISECNUM\fR]
 .R [-x \fIXPATH\fR]
 .R [-v]
 
@@ -54,6 +55,12 @@ corresponding to the section found. The text part before the first
 split point will receive the file name \fI0000.html\fR. If this option
 is not given, output will be printed to the standard output. See also
 option \fB-s\fR.
+
+.TP
+.B -p \fISECNUM\fR
+Instead of outputting all parts found, only output the part with the
+given section number index \fISECNUM\fR. The part before the first
+splitpoint has index 0.
 
 .TP
 .B -s \fISEP\fR

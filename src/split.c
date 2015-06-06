@@ -48,6 +48,7 @@ struct Splitter* splitter_new()
     ptr->num_following_nodes  = 0;
     ptr->num_preceeding_nodes = 0;
     ptr->terminate            = false;
+    ptr->secnum               = -1;
     strcpy(ptr->splitexpr, "//h1"); /* default split point xpath */
     strcpy(ptr->stdoutsep, "<!-- HTMLSPLIT -->"); /* default stdout split separator */
 
@@ -158,6 +159,11 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
         if (p_splitter->terminate) {
             fprintf(stderr, "Abnormal termination requested, quitting before handling split point %d.\n", i);
             return;
+        }
+
+        /* If only a specific section was queried, abort if we are not there. */
+        if (p_splitter->secnum >= 0 && i != p_splitter->secnum) {
+            continue;
         }
 
         /* As we modify the document using the following functions,
