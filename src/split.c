@@ -42,8 +42,12 @@ struct Splitter* splitter_new()
     memset(ptr, '\0', sizeof(struct Splitter));
 
     /* Init all the fields */
-    ptr->level = 1;
-    ptr->terminate = false;
+    ptr->p_following_nodes    = NULL;
+    ptr->p_preceeding_nodes   = NULL;
+    ptr->num_following_nodes  = 0;
+    ptr->num_preceeding_nodes = 0;
+    ptr->terminate            = false;
+    strcpy(ptr->splitexpr, "//h1"); /* default split point xpath */
 
     return ptr;
 }
@@ -81,7 +85,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
 
     /* Determine total number of split points */
     p_context = xmlXPathNewContext(p_document);
-    p_results = xmlXPathEvalExpression(BAD_CAST("//h1"), p_context); /* TODO: use p_splitter->level instead of <h1> */
+    p_results = xmlXPathEvalExpression(BAD_CAST(p_splitter->splitexpr), p_context);
     total     = p_results->nodesetval->nodeNr;
     xmlXPathFreeObject(p_results);
 
@@ -107,7 +111,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
         /* As we modify the document using the following functions,
          * we invalidate the XPath result and must query for each
          * tag anew. */
-        p_results = xmlXPathEvalExpression(BAD_CAST("//h1"), p_context); /* TODO: use p_splitter->level instead of <h1> */
+        p_results = xmlXPathEvalExpression(BAD_CAST(p_splitter->splitexpr), p_context);
 
         if (i > 0) {
             p_start_node = p_results->nodesetval->nodeTab[i-1];

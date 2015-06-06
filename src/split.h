@@ -5,8 +5,7 @@
  * Main structure of this program.
  */
 struct Splitter {
-    unsigned short level;
-    const char* langtag;
+    char splitexpr[4096];
     char infile[PATH_MAX];
     char outdir[PATH_MAX];
 
