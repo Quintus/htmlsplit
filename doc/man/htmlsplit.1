@@ -9,13 +9,25 @@ htmlsplit \- Split large HTML files into smaller HTML files
 .B htmlsplit
 .R [-i \fIFILE\fR]
 .R [-o \fIDIR\fR]
+.R [-x \fIXPATH\fR]
+.R [-v]
 
 .SH DESCRIPTION
 
 .PP
 The htmlsplit command splits a large HTML file into several smaller
 HTML files by parsing it and applying an XPath query repeatedly onto
-the larger HTML document.
+the larger HTML document. Each location where the XPath query matches
+on the given document is remember as a \fIsplit point\fR, which you
+can think of as the place the document is to be cut in two (or more)
+parts.
+
+The default behaviour is to cut at all \fB<h1>\fR tags found, but by
+supplying the \fB-x\fR option you can replace that with any XPath
+query you deem useful for your purposes.
+
+If you use the \fB-o\fR option to specify an output directory, that
+directory must exist.
 
 .SH OPTIONS
 
@@ -33,9 +45,30 @@ corresponding to the section found. The text part before the first
 split point will receive the file name \fI0000.html\fR.
 
 .TP
+.B -x \fIXPATH\fR
+Use \fIXPATH\fR as the XPath query to determine the split points. If
+this option is ommited, it defaults to \fB//h1\fR, that is all
+\fB<h1>\fR tags will be used as split points. Note that the XPath
+query must either be an absolute one (starting with “/”), or one that
+starts with “//” (= search on all levels).
+
+.TP
 .B -v
 Verbose run. This option will make \fBhtmlsplit\fR output more
 information during its operation.
+
+.SH NOTES
+
+.PP
+Please report any bugs you find to
+.URL "mailto:m-guelker@guelkerdev.de" "Marvin Gülker".
+For any bug report, please include the full output of running
+\fBhtmlsplit\fR with the \fB-v\fR option, and, if possible and
+applicable, a minimal example HTML file.
+
+.PP
+The project’s bugtracker and sourcecode can be browsed on the WWW at
+.URL "https://github.com/Quintus/htmlsplit" "GitHub".
 
 .SH BUGS
 
@@ -71,15 +104,41 @@ either moving the first \fB<h1>\fR and the following \fB<p>\fR into
 the \fB<div>\fR, or by deleting the \fB<div>\fR and assigning its
 content to the parent \fB<body>\fR tag.
 
-.SH NOTES
+Another way to mitigate this problem is to restrict the XPath query
+used to find the split points by means of the \fB-x\fR option. For the
+above example it could be set to \fB-x /html/body/div/h1\fR, in which
+case the \fB<h1>\fR outside the \fB<div>\fR would not even be
+considered as a split point.
+
+.SH EXAMPLE
 
 .PP
-Please report any bugs you find to
-.URL "mailto:m-guelker@guelkerdev.de" "Marvin Gülker".
+Split a large HTML file at its \fB<h1>\fR sections into several
+smaller files:
 
 .PP
-The project’s bugtracker and sourcecode can be browser on the WWW at
-.URL "https://github.com/Quintus/htmlsplit" "GitHub".
+    $ mkdir /tmp/split
+    $ htmlsplit -i large.html -o /tmp/split
+
+.PP
+Split it at \fB<h2>\fR instead:
+
+.PP
+    $ htmlsplit -i large.html -o /tmp/split -x '//h2'
+
+.PP
+Split at all \fB<h2>\fR tags inside the \fB<div>\fR with CSS class
+\fBmain\fR inside the \fB<body>\fR tag:
+
+.PP
+    $ htmlsplit -i large.html -o /tmp/split \e
+      -x '/html/body/div[@class="main"]/h2'
+
+.PP
+Split standard input:
+
+.PP
+    $ cat large.html | htmlsplit -o /tmp/split
 
 .SH SEE ALSO
 
