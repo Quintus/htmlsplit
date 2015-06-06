@@ -458,7 +458,7 @@ void collect_toc_info(struct Splitter* p_splitter, int index)
         /* We need to append to the end of the list; note that
          * for the first item p_last_section will be NULL. */
         p_last_section = p_splitter->p_sectioninfo;
-        while (p_last_section->p_next) {
+        while (p_last_section && p_last_section->p_next) {
             p_last_section = p_last_section->p_next;
         }
 
@@ -471,7 +471,7 @@ void collect_toc_info(struct Splitter* p_splitter, int index)
                 xmlChar* titlestr = NULL;
                 memset(p_section, '\0', sizeof(struct SectionInfo));
 
-                titlestr = xmlNodeListGetString(p_splitter->p_document, p_results->nodesetval->nodeTab[0], 1);
+                titlestr = xmlNodeListGetString(p_splitter->p_document, p_results->nodesetval->nodeTab[0]->xmlChildrenNode, 1);
 
                 strcpy(p_section->anchor, (char*) anchorid);
                 strcpy(p_section->title, (char*) titlestr);
