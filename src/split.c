@@ -15,14 +15,13 @@
 #include "split.h"
 #include "interlink.h"
 #include "toc.h"
+#include "io.h"
 #include "verbose.h"
 
 /* The BAD_CAST() macro comes from libxml2 itself,
  * see http://www.xmlsoft.org/html/libxml-xmlstring.html. */
 
-static void read_input(struct Splitter* p_splitter);
 static void handle_body(struct Splitter* p_splitter);
-static void write_part(struct Splitter* p_splitter, const char* targetfile);
 static void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
@@ -71,7 +70,7 @@ void splitter_free(struct Splitter* ptr)
 
 void splitter_split_file(struct Splitter* p_splitter)
 {
-    read_input(p_splitter);
+    splitter_read_input(p_splitter);
 
     if (!p_splitter->p_document) {
         fprintf(stderr, "Failed to parse document file '%s'.\n", p_splitter->infile);
@@ -152,7 +151,7 @@ void handle_body(struct Splitter* p_splitter)
 
         /* Write out */
         if (strlen(p_splitter->outdir) == 0) { /* stdout requested */
-            write_part(p_splitter, NULL);
+            splitter_write_part(p_splitter, NULL);
 
             if (i < total) { /* Separator */
                 printf("%s\n", p_splitter->stdoutsep);
@@ -161,7 +160,7 @@ void handle_body(struct Splitter* p_splitter)
         else {
             memset(targetfilename, '\0', PATH_MAX);
             sprintf(targetfilename, "%s/%04d.html", p_splitter->outdir, i);
-            write_part(p_splitter, targetfilename);
+            splitter_write_part(p_splitter, targetfilename);
         }
 
         if (p_splitter->interlink)
@@ -312,74 +311,4 @@ void reinsert_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node)
     free(p_splitter->p_preceeding_nodes);
     p_splitter->p_preceeding_nodes = NULL;
     p_splitter->num_preceeding_nodes = 0;
-}
-
-/**
- * Write out the document in its current state. If `targetfile' is NULL,
- * the document is output to the standard output. If it isn’t, the document
- * is written to that file.
- */
-void write_part(struct Splitter* p_splitter, const char* targetfile)
-{
-    if (targetfile) {
-        verbprintf("Writing file '%s'\n", targetfile);
-
-        FILE* p_file = fopen(targetfile, "w");
-        if (p_file) {
-            htmlDocDump(p_file, p_splitter->p_document);
-            fclose(p_file);
-        }
-        else {
-            int errsav = errno;
-            printf("Failed to open file '%s': %s\n", targetfile, strerror(errsav));
-            exit(ERR_IO);
-        }
-    }
-    else { /* Output to stdout */
-        xmlChar* xmlstr = NULL;
-        int size = 0;
-
-        verbprintf("Writing to standard output\n", targetfile);
-        htmlDocDumpMemory(p_splitter->p_document, &xmlstr, &size);
-
-        printf("%s", (char*) xmlstr);
-
-        xmlFree(xmlstr);
-    }
-}
-
-/**
- * Read input from either standard input or a file, depending on
- * the contents of the `infile` attribute of `p_splitter`.
- */
-void read_input(struct Splitter* p_splitter)
-{
-    p_splitter->p_document = NULL;
-
-    if (strlen(p_splitter->infile) == 0) { /* stdin requested */
-        char* p_buffer       = NULL;
-        xmlChar* p_xmlbuffer = NULL;
-        size_t size          = 0;
-
-        verbprintf("Reading from standard input.\n");
-
-        while (!feof(stdin)) {
-            p_buffer = realloc(p_buffer, size + 4096);
-            memset(p_buffer + size, '\0', 4096);
-
-            size += fread(p_buffer + size, 1, 4096, stdin);
-        }
-
-        verbprintf("Read %li bytes from standard input.\n", size);
-
-        p_xmlbuffer = xmlCharStrndup(p_buffer, size);
-        p_splitter->p_document = htmlReadDoc(p_xmlbuffer, "(stdin)", "UTF-8", 0);
-
-        xmlFree(p_xmlbuffer);
-        free(p_buffer);
-    }
-    else { /* File requested */
-        verbprintf("Reading file '%s'.\n", p_splitter->infile);
-        p_splitter->p_document = htmlParseFile(p_splitter->infile, "UTF-8");
-    }
 }
