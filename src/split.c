@@ -27,6 +27,7 @@ static void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_n
 static void reinsert_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static xmlNodePtr add_interlinks(struct Splitter* p_splitter, xmlNodePtr p_parent_node, int i, int total);
 static void remove_interlinks(struct Splitter* p_splitter, xmlNodePtr p_interlinks_node);
+static void collect_toc_info(struct Splitter* p_splitter, int index);
 
 /**
  * Create a new Splitter struct. The result must be
@@ -143,6 +144,9 @@ void handle_body(struct Splitter* p_splitter)
         /* Remove those parts we are not interested in */
         slice_preceeding_nodes(p_splitter, p_start_node);
         slice_following_nodes(p_splitter, p_end_node);
+
+        if (p_splitter->tocdepth > 1)
+            collect_toc_info(p_splitter, i);
 
         if (p_splitter->interlink)
             p_interlink_node = add_interlinks(p_splitter, p_parent_node, i, total);
@@ -435,4 +439,56 @@ void read_input(struct Splitter* p_splitter)
         verbprintf("Reading file '%s'.\n", p_splitter->infile);
         p_splitter->p_document = htmlParseFile(p_splitter->infile, "UTF-8");
     }
+}
+
+void collect_toc_info(struct Splitter* p_splitter, int index)
+{
+    xmlXPathContextPtr p_context = NULL;
+    xmlXPathObjectPtr p_results  = NULL;
+
+    p_context = xmlXPathNewContext(p_splitter->p_document);
+    p_results = xmlXPathEvalExpression(BAD_CAST("//h1|//h2|//h3|//h4|//h5|//h6"), p_context);
+
+    /* Very first part before first split point may not have
+     * any heading tags. */
+    if (p_results && p_results->nodesetval->nodeNr > 0) {
+        struct SectionInfo* p_last_section = NULL;
+        int i = 0;
+
+        /* We need to append to the end of the list; note that
+         * for the first item p_last_section will be NULL. */
+        p_last_section = p_splitter->p_sectioninfo;
+        while (p_last_section->p_next) {
+            p_last_section = p_last_section->p_next;
+        }
+
+        for(i=0; i < p_results->nodesetval->nodeNr; i++) {
+            xmlChar* anchorid = xmlGetProp(p_results->nodesetval->nodeTab[i], BAD_CAST("id"));
+
+            /* If this heading as an ID attribute, remember it for later ToC generation. */
+            if (anchorid) {
+                struct SectionInfo* p_section = (struct SectionInfo*) malloc(sizeof(struct SectionInfo));
+                xmlChar* titlestr = NULL;
+                memset(p_section, '\0', sizeof(struct SectionInfo));
+
+                titlestr = xmlNodeListGetString(p_splitter->p_document, p_results->nodesetval->nodeTab[0], 1);
+
+                strcpy(p_section->anchor, (char*) anchorid);
+                strcpy(p_section->title, (char*) titlestr);
+                sprintf(p_section->filename, "%04d", index);
+
+                if (p_last_section)
+                    p_last_section->p_next = p_section;
+                else /* First section info */
+                    p_splitter->p_sectioninfo = p_section;
+                p_last_section = p_section;
+
+                xmlFree(anchorid);
+                xmlFree(titlestr);
+            }
+        }
+    }
+
+    xmlXPathFreeObject(p_results);
+    xmlXPathFreeContext(p_context);
 }

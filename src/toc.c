@@ -17,5 +17,4 @@
 
 void splitter_generate_tocfile(struct Splitter* p_splitter)
 {
-    
 }
