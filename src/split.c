@@ -398,6 +398,8 @@ xmlNodePtr add_interlinks(struct Splitter* p_splitter, xmlNodePtr p_parent_node,
     if (!p_parent_node)
         return NULL;
 
+    verbprintf("Adding interlinks section to part %i.\n", i);
+
     interlink_div = xmlNewChild(p_parent_node, NULL, BAD_CAST("div"), NULL);
     xmlNewProp(interlink_div, BAD_CAST("class"), BAD_CAST("htmlsplit-interlinks"));
 
@@ -436,6 +438,8 @@ xmlNodePtr add_interlinks(struct Splitter* p_splitter, xmlNodePtr p_parent_node,
 void remove_interlinks(struct Splitter* p_splitter, xmlNodePtr p_interlinks_node)
 {
     if (p_interlinks_node) {
+        verbprintf("Removing interlinks section.\n");
+
         xmlUnlinkNode(p_interlinks_node);
         xmlFreeNode(p_interlinks_node);
     }
