@@ -18,6 +18,7 @@
 /* The BAD_CAST() macro comes from libxml2 itself,
  * see http://www.xmlsoft.org/html/libxml-xmlstring.html. */
 
+static htmlDocPtr read_input(struct Splitter* p_splitter);
 static void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document);
 static void write_part(struct Splitter* p_splitter, htmlDocPtr p_document, const char* targetfile);
 static void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
@@ -68,52 +69,7 @@ void splitter_free(struct Splitter* ptr)
 
 void splitter_split_file(struct Splitter* p_splitter)
 {
-    htmlDocPtr p_document = NULL;
-
-    if (strlen(p_splitter->infile) == 0) { /* stdin requested */
-        xmlParserCtxtPtr p_parser = NULL;
-        char buffer[4096];
-        size_t size;
-
-        verbprintf("Reading from standard input.\n");
-        size = fread(buffer, 16, 1, stdin);
-
-        p_parser = htmlCreatePushParserCtxt(NULL, NULL, buffer, size, "(stdin)", XML_CHAR_ENCODING_UTF8);
-        if (!p_parser) {
-            fprintf(stderr, "Failed to create HTML parser context.\n");
-            exit(ERR_PARSE);
-        }
-
-        /* Read in stdin chunk by chunk and parse it; reading in the
-         * entire thing at once may make us run out of memory. */
-        while (!feof(stdin)) { /* Single = intended */
-            memset(buffer, '\0', 4096);
-            size = fread(buffer, 4096, 1, stdin);
-
-            printf("READ: >%s<\n", buffer);
-            if (htmlParseChunk(p_parser, buffer, size, 0) != 0) {
-                xmlErrorPtr p_err = xmlGetLastError();
-                fprintf(stderr, "Failed to parse document at line %d: %s\n", p_err->line, p_err->message);
-                exit(ERR_PARSE);
-            }
-        }
-
-        /* terminate */
-        if (htmlParseChunk(p_parser, buffer, 0, 1) != 0) {
-            xmlErrorPtr p_err = xmlGetLastError();
-            fprintf(stderr, "Failed to parse document at line %d: %s\n", p_err->line, p_err->message);
-            exit(ERR_PARSE);
-        }
-
-        printf("Well formed? %d\n", p_parser->wellFormed);
-        printf("PTR: %li\n", (long)p_parser->myDoc);
-        htmlFreeParserCtxt(p_parser);
-        p_document = p_parser->myDoc;
-    }
-    else { /* File requested */
-        verbprintf("Reading file '%s'.\n", p_splitter->infile);
-        p_document = htmlParseFile(p_splitter->infile, "UTF-8");
-    }
+    htmlDocPtr p_document = read_input(p_splitter);
 
     if (!p_document) {
         fprintf(stderr, "Failed to parse document file '%s'.\n", p_splitter->infile);
@@ -443,4 +399,42 @@ void remove_interlinks(struct Splitter* p_splitter, xmlNodePtr p_interlinks_node
         xmlUnlinkNode(p_interlinks_node);
         xmlFreeNode(p_interlinks_node);
     }
+}
+
+/**
+ * Read input from either standard input or a file, depending on
+ * the contents of the `infile` attribute of `p_splitter`.
+ */
+htmlDocPtr read_input(struct Splitter* p_splitter)
+{
+    htmlDocPtr p_document = NULL;
+
+    if (strlen(p_splitter->infile) == 0) { /* stdin requested */
+        char* p_buffer       = NULL;
+        xmlChar* p_xmlbuffer = NULL;
+        size_t size          = 0;
+
+        verbprintf("Reading from standard input.\n");
+
+        while (!feof(stdin)) {
+            p_buffer = realloc(p_buffer, size + 4096);
+            memset(p_buffer + size, '\0', 4096);
+
+            size += fread(p_buffer + size, 1, 4096, stdin);
+        }
+
+        verbprintf("Read %li bytes from standard input.\n", size);
+
+        p_xmlbuffer = xmlCharStrndup(p_buffer, size);
+        p_document  = htmlReadDoc(p_xmlbuffer, "(stdin)", "UTF-8", 0);
+
+        xmlFree(p_xmlbuffer);
+        free(p_buffer);
+    }
+    else { /* File requested */
+        verbprintf("Reading file '%s'.\n", p_splitter->infile);
+        p_document = htmlParseFile(p_splitter->infile, "UTF-8");
+    }
+
+    return p_document;
 }
