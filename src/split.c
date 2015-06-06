@@ -24,6 +24,8 @@ static void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node
 static void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static void reinsert_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
+static xmlNodePtr add_interlinks(struct Splitter* p_splitter, xmlNodePtr p_parent_node, int i, int total);
+static void remove_interlinks(struct Splitter* p_splitter, xmlNodePtr p_interlinks_node);
 
 /**
  * Create a new Splitter struct. The result must be
@@ -49,6 +51,7 @@ struct Splitter* splitter_new()
     ptr->num_preceeding_nodes = 0;
     ptr->terminate            = false;
     ptr->secnum               = -1;
+    ptr->interlink            = false;
     strcpy(ptr->splitexpr, "//h1"); /* default split point xpath */
     strcpy(ptr->stdoutsep, "<!-- HTMLSPLIT -->"); /* default stdout split separator */
 
@@ -155,6 +158,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
         xmlNodePtr p_start_node = NULL; /* Start split point; will be kept */
         xmlNodePtr p_end_node   = NULL; /* End split point; will be deleted */
         xmlNodePtr p_parent_node = NULL; /* Common parent */
+        xmlNodePtr p_interlink_node = NULL;
 
         if (p_splitter->terminate) {
             fprintf(stderr, "Abnormal termination requested, quitting before handling split point %d.\n", i);
@@ -173,6 +177,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
 
         if (i > 0) {
             p_start_node = p_results->nodesetval->nodeTab[i-1];
+            p_parent_node = p_start_node->parent; /* Only needed for interlinking */
         }
         if (i < total) {
             p_end_node = p_results->nodesetval->nodeTab[i];
@@ -182,6 +187,9 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
         /* Remove those parts we are not interested in */
         slice_preceeding_nodes(p_splitter, p_start_node);
         slice_following_nodes(p_splitter, p_end_node);
+
+        if (p_splitter->interlink)
+            p_interlink_node = add_interlinks(p_splitter, p_parent_node, i, total);
 
         /* Write out */
         if (strlen(p_splitter->outdir) == 0) { /* stdout requested */
@@ -196,6 +204,9 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
             sprintf(targetfilename, "%s/%04d.html", p_splitter->outdir, i);
             write_part(p_splitter, p_document, targetfilename);
         }
+
+        if (p_splitter->interlink)
+            remove_interlinks(p_splitter, p_interlink_node);
 
         /* Resurrect deleted parts */
         reinsert_preceeding_nodes(p_splitter, p_start_node);
@@ -375,5 +386,57 @@ void write_part(struct Splitter* p_splitter, htmlDocPtr p_document, const char* 
         printf("%s", (char*) xmlstr);
 
         xmlFree(xmlstr);
+    }
+}
+
+xmlNodePtr add_interlinks(struct Splitter* p_splitter, xmlNodePtr p_parent_node, int i, int total)
+{
+    xmlNodePtr interlink_div = NULL;
+    xmlNodePtr interlink_ul = NULL;
+
+    /* Return if single-part document */
+    if (!p_parent_node)
+        return NULL;
+
+    interlink_div = xmlNewChild(p_parent_node, NULL, BAD_CAST("div"), NULL);
+    xmlNewProp(interlink_div, BAD_CAST("class"), BAD_CAST("htmlsplit-interlinks"));
+
+    interlink_ul = xmlNewChild(interlink_div, NULL, BAD_CAST("ul"), NULL);
+
+    char uri[1024];
+
+    if (i > 0) {
+        xmlNodePtr li = NULL;
+        xmlNodePtr a  = NULL;
+
+        memset(uri, '\0', 1024);
+        sprintf(uri, "%04d.html", i-1);
+
+        li = xmlNewChild(interlink_ul, NULL, BAD_CAST("li"), NULL);
+        a  = xmlNewChild(li, NULL, BAD_CAST("a"), BAD_CAST("&larr;"));
+
+        xmlNewProp(a, BAD_CAST("href"), BAD_CAST(uri));
+    }
+    if (i < total) {
+        xmlNodePtr li = NULL;
+        xmlNodePtr a  = NULL;
+
+        memset(uri, '\0', 1024);
+        sprintf(uri, "%04d.html", i+1);
+
+        li = xmlNewChild(interlink_ul, NULL, BAD_CAST("li"), NULL);
+        a  = xmlNewChild(li, NULL, BAD_CAST("a"), BAD_CAST("&rarr;"));
+
+        xmlNewProp(a, BAD_CAST("href"), BAD_CAST(uri));
+    }
+
+    return interlink_div;
+}
+
+void remove_interlinks(struct Splitter* p_splitter, xmlNodePtr p_interlinks_node)
+{
+    if (p_interlinks_node) {
+        xmlUnlinkNode(p_interlinks_node);
+        xmlFreeNode(p_interlinks_node);
     }
 }

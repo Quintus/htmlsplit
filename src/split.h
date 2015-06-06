@@ -10,6 +10,7 @@ struct Splitter {
     char outdir[PATH_MAX];
     char stdoutsep[1024];
     int secnum;
+    bool interlink;
 
     /***** Internal use *****/
     xmlNodePtr* p_following_nodes;

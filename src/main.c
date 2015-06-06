@@ -18,14 +18,14 @@ static struct Splitter* sp_splitter = NULL;
 
 static void print_usage(const char* name)
 {
-    fprintf(stderr, "Usage: %s [-v] [-x XPATH] [-i FILE] [-o FILE] [-p SECNUM]\n", name);
+    fprintf(stderr, "Usage: %s [-v] [l] [-x XPATH] [-i FILE] [-o FILE] [-p SECNUM]\n", name);
 }
 
 static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
 {
     int curopt = 0;
 
-    while ((curopt = getopt(argc, argv, "vhi:o:x:s:p:")) > 0) {
+    while ((curopt = getopt(argc, argv, "vhli:o:x:s:p:")) > 0) {
         switch (curopt) {
         case 'v':
             g_htmlsplit_verbose = true;
@@ -44,6 +44,9 @@ static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
             break;
         case 'p':
             p_splitter->secnum = atoi(optarg);
+            break;
+        case 'l':
+            p_splitter->interlink = true;
             break;
         case 'h':
             print_usage(argv[0]);

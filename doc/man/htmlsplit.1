@@ -8,6 +8,7 @@ htmlsplit \- Split large HTML files into smaller HTML files
 
 .B htmlsplit
 .R [-i \fIFILE\fR]
+.R [-l]
 .R { [-o \fIDIR\fR] | [-s \fISEP\fR] }
 .R [-p \fISECNUM\fR]
 .R [-x \fIXPATH\fR]
@@ -45,6 +46,18 @@ purposes, this combination is accepted though.
 .B -i \fIFILE\fR
 Read input from the given HTML file. If this option is ommitted, input
 is read from standard input instead.
+
+.TP
+.B -l
+Generate “previous” and “next” links in the common parent of the
+splitting points. These links are placed inside an \fB<ul>\fR tag that
+is itself contained in a \fB<div>\fR tag with the CSS class
+\fBhtmlsplit-interlinks\fR, so that you can easily target this section
+with your CSS. Note that \fBhtmlsplit\fR does not generate any CSS by
+itself, so if you don’t style this section, it will show up in the
+default way unstyled HTML elements show up. The contents of the links
+are the HTML entities \fB&larr;\fR and \fB&rarr;\fR for previous and
+next links, respectively.
 
 .TP
 .B -o \fIDIR\fR
