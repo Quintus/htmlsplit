@@ -1,6 +1,8 @@
 #ifndef HTMLSPLITTER_SPLIT_H
 #define HTMLSPLITTER_SPLIT_H
 
+struct SectionInfo; /* forward-declare; real declaration in toc.h */
+
 /**
  * Main structure of this program.
  */

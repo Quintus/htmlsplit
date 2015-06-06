@@ -13,6 +13,7 @@
 #include <libxml/xmlerror.h>
 #include "config.h"
 #include "split.h"
+#include "interlink.h"
 #include "toc.h"
 #include "verbose.h"
 
@@ -26,8 +27,6 @@ static void slice_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node
 static void slice_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static void reinsert_following_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
 static void reinsert_preceeding_nodes(struct Splitter* p_splitter, xmlNodePtr p_node);
-static xmlNodePtr add_interlinks(struct Splitter* p_splitter, xmlNodePtr p_parent_node, int i, int total);
-static void remove_interlinks(struct Splitter* p_splitter, xmlNodePtr p_interlinks_node);
 
 /**
  * Create a new Splitter struct. The result must be
@@ -149,7 +148,7 @@ void handle_body(struct Splitter* p_splitter)
             splitter_collect_toc_info(p_splitter, i);
 
         if (p_splitter->interlink)
-            p_interlink_node = add_interlinks(p_splitter, p_parent_node, i, total);
+            p_interlink_node = splitter_add_interlinks(p_splitter, p_parent_node, i, total);
 
         /* Write out */
         if (strlen(p_splitter->outdir) == 0) { /* stdout requested */
@@ -166,7 +165,7 @@ void handle_body(struct Splitter* p_splitter)
         }
 
         if (p_splitter->interlink)
-            remove_interlinks(p_splitter, p_interlink_node);
+            splitter_remove_interlinks(p_splitter, p_interlink_node);
 
         /* Resurrect deleted parts */
         reinsert_preceeding_nodes(p_splitter, p_start_node);
@@ -346,62 +345,6 @@ void write_part(struct Splitter* p_splitter, const char* targetfile)
         printf("%s", (char*) xmlstr);
 
         xmlFree(xmlstr);
-    }
-}
-
-xmlNodePtr add_interlinks(struct Splitter* p_splitter, xmlNodePtr p_parent_node, int i, int total)
-{
-    xmlNodePtr interlink_div = NULL;
-    xmlNodePtr interlink_ul = NULL;
-
-    /* Return if single-part document */
-    if (!p_parent_node)
-        return NULL;
-
-    verbprintf("Adding interlinks section to part %i.\n", i);
-
-    interlink_div = xmlNewChild(p_parent_node, NULL, BAD_CAST("div"), NULL);
-    xmlNewProp(interlink_div, BAD_CAST("class"), BAD_CAST("htmlsplit-interlinks"));
-
-    interlink_ul = xmlNewChild(interlink_div, NULL, BAD_CAST("ul"), NULL);
-
-    char uri[1024];
-
-    if (i > 0) {
-        xmlNodePtr li = NULL;
-        xmlNodePtr a  = NULL;
-
-        memset(uri, '\0', 1024);
-        sprintf(uri, "%04d.html", i-1);
-
-        li = xmlNewChild(interlink_ul, NULL, BAD_CAST("li"), NULL);
-        a  = xmlNewChild(li, NULL, BAD_CAST("a"), BAD_CAST("&larr;"));
-
-        xmlNewProp(a, BAD_CAST("href"), BAD_CAST(uri));
-    }
-    if (i < total) {
-        xmlNodePtr li = NULL;
-        xmlNodePtr a  = NULL;
-
-        memset(uri, '\0', 1024);
-        sprintf(uri, "%04d.html", i+1);
-
-        li = xmlNewChild(interlink_ul, NULL, BAD_CAST("li"), NULL);
-        a  = xmlNewChild(li, NULL, BAD_CAST("a"), BAD_CAST("&rarr;"));
-
-        xmlNewProp(a, BAD_CAST("href"), BAD_CAST(uri));
-    }
-
-    return interlink_div;
-}
-
-void remove_interlinks(struct Splitter* p_splitter, xmlNodePtr p_interlinks_node)
-{
-    if (p_interlinks_node) {
-        verbprintf("Removing interlinks section.\n");
-
-        xmlUnlinkNode(p_interlinks_node);
-        xmlFreeNode(p_interlinks_node);
     }
 }
 
