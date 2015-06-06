@@ -26,8 +26,17 @@ The default behaviour is to cut at all \fB<h1>\fR tags found, but by
 supplying the \fB-x\fR option you can replace that with any XPath
 query you deem useful for your purposes.
 
-If you use the \fB-o\fR option to specify an output directory, that
-directory must exist.
+By default, all parts found will be written to the standard output
+separated by a customisable (see \fB-s\fR option) separator. By
+specifying \fB-o\fR, you can advise \fBhtmlsplit\fR to write its
+output into a directory instead. Note that in this case the directory
+has to exist, it will not be created automatically for you and the
+program will fail if it is not available.
+
+Requesting verbose output with \fB-v\fR when you output to standard
+output is a bad idea, because the output from the verbose run will
+come out intermixed with the document parts then. For debugging
+purposes, this combination is accepted though.
 
 .SH OPTIONS
 
@@ -148,6 +157,12 @@ Split standard input:
 
 .PP
     $ cat large.html | htmlsplit -o /tmp/split
+
+.PP
+Output to standard output with custom separator:
+
+.PP
+    $ htmlsplit -i large.html -s MYCUSTOMSEPARATOR
 
 .SH SEE ALSO
 
