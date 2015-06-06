@@ -9,6 +9,7 @@ struct SectionInfo {
     char title[8192];    /*< Title of the section */
     char filename[1024]; /*< Filename of the file the section is contained in */
     char anchor[8192];   /*< NAME attribute to target for linking to this section */
+    int level;           /*< Level. 1 for h1, 2 for h2, etc. */
 
     struct SectionInfo* p_next; /*< Next section */
 };

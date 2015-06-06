@@ -143,7 +143,7 @@ void handle_body(struct Splitter* p_splitter)
         slice_preceeding_nodes(p_splitter, p_start_node);
         slice_following_nodes(p_splitter, p_end_node);
 
-        if (p_splitter->tocdepth > 1)
+        if (p_splitter->tocdepth > 0)
             splitter_collect_toc_info(p_splitter, i);
 
         if (p_splitter->interlink)
