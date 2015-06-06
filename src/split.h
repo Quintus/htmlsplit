@@ -15,6 +15,8 @@ struct Splitter {
     xmlNodePtr* p_preceeding_nodes;
     int num_following_nodes;
     int num_preceeding_nodes;
+
+    bool terminate;
 };
 
 /**

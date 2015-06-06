@@ -43,6 +43,7 @@ struct Splitter* splitter_new()
 
     /* Init all the fields */
     ptr->level = 1;
+    ptr->terminate = false;
 
     return ptr;
 }
@@ -61,7 +62,7 @@ void splitter_split_file(struct Splitter* p_splitter)
     p_document = htmlParseFile(p_splitter->infile, "UTF-8");
 
     if (!p_document) {
-        fprintf(stderr, "Failed to parse document file '%s'\n", p_splitter->infile);
+        fprintf(stderr, "Failed to parse document file '%s'.\n", p_splitter->infile);
         exit(ERR_PARSE);
     }
 
@@ -97,6 +98,11 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
         xmlNodePtr p_start_node = NULL; /* Start split point; will be kept */
         xmlNodePtr p_end_node   = NULL; /* End split point; will be deleted */
         xmlNodePtr p_parent_node = NULL; /* Common parent */
+
+        if (p_splitter->terminate) {
+            fprintf(stderr, "Abnormal termination requested, quitting before handling split point %d.\n", i);
+            return;
+        }
 
         /* As we modify the document using the following functions,
          * we invalidate the XPath result and must query for each

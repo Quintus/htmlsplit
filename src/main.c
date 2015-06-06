@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <locale.h>
+#include <signal.h>
 #include <unistd.h>
 #include <linux/limits.h>
 #include <libxml/tree.h>
@@ -12,6 +13,8 @@
 #include "config.h"
 #include "split.h"
 #include "verbose.h"
+
+static struct Splitter* sp_splitter = NULL;
 
 static void print_usage(const char* name)
 {
@@ -52,6 +55,11 @@ void cleanup()
     xmlCleanupParser();
 }
 
+void handle_sigterm_and_sigint(int sigval)
+{
+    sp_splitter->terminate = true;
+}
+
 int main(int argc, char* argv[])
 {
     setlocale(LC_ALL, "");
@@ -59,16 +67,19 @@ int main(int argc, char* argv[])
 
     atexit(cleanup);
 
-    struct Splitter* p_splitter = splitter_new();
+    sp_splitter = splitter_new();
 
-    if (!p_splitter) {
+    signal(SIGTERM, handle_sigterm_and_sigint);
+    signal(SIGINT, handle_sigterm_and_sigint);
+
+    if (!sp_splitter) {
         fprintf(stderr, "Failed to initialize Splitter instance\n");
         exit(ERR_MEM);
     }
 
-    parse_argv(argc, argv, p_splitter);
-    splitter_split_file(p_splitter);
-    splitter_free(p_splitter);
+    parse_argv(argc, argv, sp_splitter);
+    splitter_split_file(sp_splitter);
+    splitter_free(sp_splitter);
 
     return 0;
 }
