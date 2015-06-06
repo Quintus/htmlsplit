@@ -101,7 +101,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
     total = p_results->nodesetval->nodeNr;
     xmlXPathFreeObject(p_results);
 
-    verbprintf("Found %d nodes for splitting.\n", total);
+    verbprintf("Found %d split points.\n", total);
 
     /* Now iterate them all. We do the splitting by deleting every node
      * on our level before the last target, and everything behind the
@@ -111,10 +111,10 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
      *
      * where x will be deleted, <> is a split point, and . is kept. */
     for(i = 0; i <= total; i++) {
-        xmlNodePtr p_start_node = NULL; /* Start split point; will be kept */
-        xmlNodePtr p_end_node   = NULL; /* End split point; will be deleted */
-        xmlNodePtr p_parent_node = NULL; /* Common parent */
-        xmlNodePtr p_interlink_node = NULL;
+        xmlNodePtr p_start_node     = NULL; /* Start split point; will be kept */
+        xmlNodePtr p_end_node       = NULL; /* End split point; will be deleted */
+        xmlNodePtr p_parent_node    = NULL; /* Common parent */
+        xmlNodePtr p_interlink_node = NULL; /* Temporary node for the links between parts */
 
         if (p_splitter->terminate) {
             fprintf(stderr, "Abnormal termination requested, quitting before handling split point %d.\n", i);
@@ -151,7 +151,7 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
         if (strlen(p_splitter->outdir) == 0) { /* stdout requested */
             write_part(p_splitter, p_document, NULL);
 
-            if (i < total) {
+            if (i < total) { /* Separator */
                 printf("%s\n", p_splitter->stdoutsep);
             }
         }
