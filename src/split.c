@@ -86,7 +86,13 @@ void handle_body(struct Splitter* p_splitter, htmlDocPtr p_document)
     /* Determine total number of split points */
     p_context = xmlXPathNewContext(p_document);
     p_results = xmlXPathEvalExpression(BAD_CAST(p_splitter->splitexpr), p_context);
-    total     = p_results->nodesetval->nodeNr;
+
+    if (!p_results->nodesetval) {
+        fprintf(stderr, "XPath expression '%s' is invalid.\n", p_splitter->splitexpr);
+        exit(ERR_CLI);
+    }
+
+    total = p_results->nodesetval->nodeNr;
     xmlXPathFreeObject(p_results);
 
     verbprintf("Found %d nodes for splitting.\n", total);
