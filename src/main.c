@@ -38,6 +38,7 @@ static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
             break;
         case 'x':
             strcpy(p_splitter->splitexpr, optarg);
+            break;
         case 'h':
             print_usage(argv[0]);
             xmlCleanupParser();
