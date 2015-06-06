@@ -10,6 +10,7 @@
 #include <libxml/xpath.h>
 #include <libxml/HTMLparser.h>
 #include <libxml/HTMLtree.h>
+#include <libxml/xmlerror.h>
 #include "config.h"
 #include "split.h"
 #include "verbose.h"
@@ -64,7 +65,51 @@ void splitter_free(struct Splitter* ptr)
 void splitter_split_file(struct Splitter* p_splitter)
 {
     htmlDocPtr p_document = NULL;
-    p_document = htmlParseFile(p_splitter->infile, "UTF-8");
+
+    if (strlen(p_splitter->infile) == 0) { /* stdin requested */
+        xmlParserCtxtPtr p_parser = NULL;
+        char buffer[4096];
+        size_t size;
+
+        verbprintf("Reading from standard input.\n");
+        size = fread(buffer, 16, 1, stdin);
+
+        p_parser = htmlCreatePushParserCtxt(NULL, NULL, buffer, size, "(stdin)", XML_CHAR_ENCODING_UTF8);
+        if (!p_parser) {
+            fprintf(stderr, "Failed to create HTML parser context.\n");
+            exit(ERR_PARSE);
+        }
+
+        /* Read in stdin chunk by chunk and parse it; reading in the
+         * entire thing at once may make us run out of memory. */
+        while (!feof(stdin)) { /* Single = intended */
+            memset(buffer, '\0', 4096);
+            size = fread(buffer, 4096, 1, stdin);
+
+            printf("READ: >%s<\n", buffer);
+            if (htmlParseChunk(p_parser, buffer, size, 0) != 0) {
+                xmlErrorPtr p_err = xmlGetLastError();
+                fprintf(stderr, "Failed to parse document at line %d: %s\n", p_err->line, p_err->message);
+                exit(ERR_PARSE);
+            }
+        }
+
+        /* terminate */
+        if (htmlParseChunk(p_parser, buffer, 0, 1) != 0) {
+            xmlErrorPtr p_err = xmlGetLastError();
+            fprintf(stderr, "Failed to parse document at line %d: %s\n", p_err->line, p_err->message);
+            exit(ERR_PARSE);
+        }
+
+        printf("Well formed? %d\n", p_parser->wellFormed);
+        printf("PTR: %li\n", (long)p_parser->myDoc);
+        htmlFreeParserCtxt(p_parser);
+        p_document = p_parser->myDoc;
+    }
+    else { /* File requested */
+        verbprintf("Reading file '%s'.\n", p_splitter->infile);
+        p_document = htmlParseFile(p_splitter->infile, "UTF-8");
+    }
 
     if (!p_document) {
         fprintf(stderr, "Failed to parse document file '%s'.\n", p_splitter->infile);
