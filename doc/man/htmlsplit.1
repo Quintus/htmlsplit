@@ -11,6 +11,7 @@ htmlsplit \- Split large HTML files into smaller HTML files
 .R [-l]
 .R { [-o \fIDIR\fR] | [-s \fISEP\fR] }
 .R [-p \fISECNUM\fR]
+.R [t]
 .R [-x \fIXPATH\fR]
 .R [-v]
 
@@ -81,6 +82,15 @@ When outputting to the standard output (i.e. \fB-o\fR was not given),
 use this as the separator between the documents. It defaults to
 \fB<!-- HTMLSPLIT -->\fR if not given. May not be longer than 1023
 bytes. A newline is automatically appended to this.
+
+.TP
+.B -t \fIDEPTH\fR
+Generate an additional file that contains a Table of Contents
+(ToC). If output to standard output is requested, the ToC file is
+output as a separate part. The ToC will contain all headings inside
+the matched area, up to headings of the given level (i.e. 3 will
+result in headings up to and including \fB<h3>\fR to be included into
+the ToC).
 
 .TP
 .B -x \fIXPATH\fR

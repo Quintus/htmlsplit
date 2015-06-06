@@ -11,6 +11,7 @@ struct Splitter {
     char stdoutsep[1024];
     int secnum;
     bool interlink;
+    int tocdepth;
 
     /***** Internal use *****/
     xmlNodePtr* p_following_nodes;

@@ -13,19 +13,20 @@
 #include "config.h"
 #include "split.h"
 #include "verbose.h"
+#include "toc.h"
 
 static struct Splitter* sp_splitter = NULL;
 
 static void print_usage(const char* name)
 {
-    fprintf(stderr, "Usage: %s [-v] [l] [-x XPATH] [-i FILE] [-o FILE] [-p SECNUM]\n", name);
+    fprintf(stderr, "Usage: %s [-v] [l] [-t] [-x XPATH] [-i FILE] [-o FILE] [-p SECNUM]\n", name);
 }
 
 static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
 {
     int curopt = 0;
 
-    while ((curopt = getopt(argc, argv, "vhli:o:x:s:p:")) > 0) {
+    while ((curopt = getopt(argc, argv, "vhli:o:x:s:p:t:")) > 0) {
         switch (curopt) {
         case 'v':
             g_htmlsplit_verbose = true;
@@ -47,6 +48,9 @@ static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
             break;
         case 'l':
             p_splitter->interlink = true;
+            break;
+        case 't':
+            p_splitter->tocdepth = atoi(optarg);
             break;
         case 'h':
             print_usage(argv[0]);
@@ -90,7 +94,10 @@ int main(int argc, char* argv[])
     }
 
     parse_argv(argc, argv, sp_splitter);
+
     splitter_split_file(sp_splitter);
+    splitter_generate_tocfile(sp_splitter);
+
     splitter_free(sp_splitter);
 
     return 0;
