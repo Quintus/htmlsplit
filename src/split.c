@@ -54,6 +54,7 @@ struct Splitter* splitter_new()
     ptr->tocdepth             = 0;
     strcpy(ptr->splitexpr, "//h1"); /* default split point xpath */
     strcpy(ptr->stdoutsep, "<!-- HTMLSPLIT -->"); /* default stdout split separator */
+    strcpy(ptr->tocname, "Table of Contents");
 
     return ptr;
 }

@@ -112,6 +112,7 @@ void splitter_generate_tocfile(struct Splitter* p_splitter)
     xmlNodePtr p_node = NULL;
     xmlNodePtr p_list = NULL;
     int current_level = 1; /* Level for <h1> tags */
+    xmlChar* toctitle = xmlCharStrdup(p_splitter->tocname);
 
     verbprintf("Generating Table of Contents.\n");
     p_parent_node = strip_document(p_splitter);
@@ -120,7 +121,7 @@ void splitter_generate_tocfile(struct Splitter* p_splitter)
     p_node = xmlNewChild(p_parent_node, NULL, BAD_CAST("div"), NULL);
     xmlNewProp(p_node, BAD_CAST("class"), BAD_CAST("htmlsplit-toc"));
 
-    xmlNewTextChild(p_node, NULL, BAD_CAST("h1"), BAD_CAST("Table of Contents"));
+    xmlNewTextChild(p_node, NULL, BAD_CAST("h1"), toctitle);
     p_node = xmlNewChild(p_node, NULL, BAD_CAST("ul"), NULL);
 
     /* Add ToC items */
@@ -185,6 +186,8 @@ void splitter_generate_tocfile(struct Splitter* p_splitter)
         sprintf(path, "%s/toc.html", p_splitter->outdir);
         splitter_write_part(p_splitter, path);
     }
+
+    xmlFree(toctitle);
 }
 
 /**

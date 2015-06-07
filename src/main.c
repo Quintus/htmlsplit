@@ -40,7 +40,7 @@ static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
     int curopt = 0;
     bool copyright = true;
 
-    while ((curopt = getopt(argc, argv, "Vvhlqi:o:x:s:p:t:")) > 0) {
+    while ((curopt = getopt(argc, argv, "Vvhlqi:o:x:s:p:t:T:")) > 0) {
         switch (curopt) {
         case 'v':
             g_htmlsplit_verbose = true;
@@ -72,6 +72,10 @@ static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
         case 'V':
             print_copyright();
             exit(0);
+            break;
+        case 'T':
+            strcpy(p_splitter->tocname, optarg);
+            break;
         case 'h':
             print_usage(argv[0]);
             xmlCleanupParser();

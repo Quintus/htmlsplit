@@ -14,6 +14,7 @@ struct Splitter {
     int secnum;
     bool interlink;
     int tocdepth;
+    char tocname[4096];
 
     /***** Internal use *****/
     htmlDocPtr p_document;
