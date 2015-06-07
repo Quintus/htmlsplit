@@ -10,7 +10,7 @@
 #include <libxml/xpath.h>
 #include <libxml/HTMLparser.h>
 #include <libxml/HTMLtree.h>
-#include "config.h"
+#include "htmlsplit_config.h"
 #include "split.h"
 #include "verbose.h"
 #include "toc.h"
@@ -24,6 +24,7 @@ static void print_usage(const char* name)
 
 static void print_copyright()
 {
+    fprintf(stderr, "htmlsplit %s\n", HTMLSPLIT_VERSION);
     fprintf(stderr,
             "Copyright (C) 2015 Marvin Gülker\n"
             "This program is free software under the GPL.\n"

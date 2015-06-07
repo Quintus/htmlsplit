@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(HTMLSPLIT)
 
+set(HTMLSPLIT_VERSION "0.0.1")
 set(CMAKE_MODULE_PATH ${HTMLSPLIT_SOURCE_DIR}/cmake/modules)
 
 ########################################
@@ -20,14 +21,16 @@ add_definitions(${LIBXML2_DEFINITIONS})
 ########################################
 # Source files
 
+configure_file("src/config.h" "${HTMLSPLIT_BINARY_DIR}/htmlsplit_config.h")
 file(GLOB_RECURSE htmlsplit_sources
   "src/*.c"
   "src/*.h")
 
 include_directories("${HTMLSPLIT_SOURCE_DIR}/src")
+include_directories("${HTMLSPLIT_BINARY_DIR}")
 
 ########################################
 # Targets
 
-add_executable(htmlsplit ${htmlsplit_sources})
+add_executable(htmlsplit ${htmlsplit_sources} ${HTMLSPLIT_BINARY_DIR}/htmlsplit_config.h)
 target_link_libraries(htmlsplit ${LIBXML2_LIBRARIES})

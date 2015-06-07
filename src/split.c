@@ -11,7 +11,6 @@
 #include <libxml/HTMLparser.h>
 #include <libxml/HTMLtree.h>
 #include <libxml/xmlerror.h>
-#include "config.h"
 #include "split.h"
 #include "interlink.h"
 #include "toc.h"
