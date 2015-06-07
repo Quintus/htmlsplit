@@ -53,30 +53,39 @@ void splitter_collect_toc_info(struct Splitter* p_splitter, int index)
         }
 
         for(i=0; i < p_results->nodesetval->nodeNr; i++) {
-            xmlChar* anchorid = detect_target_anchor(p_splitter, p_results->nodesetval->nodeTab[i]);
-            xmlChar* titlestr = xmlNodeListGetString(p_splitter->p_document, p_results->nodesetval->nodeTab[i]->xmlChildrenNode, 1);
+            xmlNodePtr p_curhead = p_results->nodesetval->nodeTab[i];
+            xmlChar* anchorid    = detect_target_anchor(p_splitter, p_curhead);
 
             /* If this heading as an ID attribute, remember it for later ToC generation. */
-            if (anchorid && titlestr) { /* some silly people use empty <h*> tags, thus also check for `titlestr' */
+            if (anchorid && p_curhead->children) { /* some silly people use empty <h*> tags */
                 struct SectionInfo* p_section = (struct SectionInfo*) malloc(sizeof(struct SectionInfo));
 
-                verbprintf("Collecting heading '%s' for later ToC generation.\n", (char*) titlestr);
+                verbprintf("Collecting heading for later ToC generation.\n");
                 memset(p_section, '\0', sizeof(struct SectionInfo));
 
-                p_section->level = atoi(((char*) p_results->nodesetval->nodeTab[i]->name) + 1); /* Strip leading “h” of h1, h2, etc. */
+                /* Copy easy things */
+                p_section->level = atoi(((char*) p_curhead->name) + 1); /* Strip leading “h” of h1, h2, etc. */
                 strcpy(p_section->anchor, (char*) anchorid);
-                strcpy(p_section->title, (char*) titlestr);
                 sprintf(p_section->filename, "%04d.html", index);
 
+                /* Copy the heading’s content */
+                p_section->content_nodes = xmlDocCopyNodeList(p_splitter->p_document, p_curhead->children);
+                if (!p_section->content_nodes) {
+                    fprintf(stderr, "Warning: Failed to copy node list for ToC collection, skipping this heading.\n");
+                    free(p_section);
+                    /* continue; */
+                    exit(ERR_PARSE); /* DEBUG */
+                }
 
+                /* Advance section linked list */
                 if (p_last_section)
                     p_last_section->p_next = p_section;
                 else /* First section info */
                     p_splitter->p_sectioninfo = p_section;
                 p_last_section = p_section;
 
+                /* Cleanup */
                 xmlFree(anchorid);
-                xmlFree(titlestr);
             }
             else {
                 verbprintf("This heading has either no anchor or no content, thus no entry in ToC possible.\n");
@@ -118,11 +127,10 @@ void splitter_generate_tocfile(struct Splitter* p_splitter)
     p_section = p_splitter->p_sectioninfo;
     while(p_section) {
         char uri[1024];
-        xmlChar* xmltitle = NULL;
 
         /* Honour user-specified depth limit */
         if (p_splitter->tocdepth < p_section->level) {
-            verbprintf("Section '%s' has level %d, which is above the threshold of %d.\n", p_section->title, p_section->level, p_splitter->tocdepth);
+            verbprintf("Section has level %d, which is above the threshold of %d.\n", p_section->level, p_splitter->tocdepth);
             p_section = p_section->p_next;
             continue;
         }
@@ -151,18 +159,17 @@ void splitter_generate_tocfile(struct Splitter* p_splitter)
         /* Preparation */
         memset(uri, '\0', 1024);
         sprintf(uri, "%s#%s", p_section->filename, p_section->anchor);
-        xmltitle = xmlCharStrdup(p_section->title);
 
-        verbprintf("Adding section '%s' (section level %d) to ToC on level %d.\n", p_section->title, p_section->level, current_level);
+        verbprintf("Adding section with level %d to ToC on level %d.\n", p_section->level, current_level);
 
         /* Add node */
         p_node = xmlNewChild(p_list, NULL, BAD_CAST("li"), NULL);
-        p_node = xmlNewTextChild(p_node, NULL, BAD_CAST("a"), xmltitle);
+        p_node = xmlNewChild(p_node, NULL, BAD_CAST("a"), NULL);
         xmlNewProp(p_node, BAD_CAST("href"), BAD_CAST(uri));
+        xmlAddChildList(p_node, p_section->content_nodes);
 
         /* Next */
         p_section = p_section->p_next;
-        xmlFree(xmltitle);
     }
 
     /* Write out */
