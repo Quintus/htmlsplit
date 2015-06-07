@@ -112,6 +112,32 @@ information during its operation.
 
 .SH NOTES
 
+The ToC generator requires the document’s author to specify something
+it can target in the ToC file, because apart from the splitting and
+re-merging actions \fBhtmlsplit\fR does not tamper with the document
+itself. Thus, it looks for three possible indicators of ToC headings:
+
+.RS
+
+.IP 1.
+An \fBid\fR attribute on the heading tag.
+
+.IP 2.
+An \fB<a>\fR tag inside the heading tag with a \fBname\fR attribute
+set.
+
+.IP 3.
+An \fB<a>\fR tag with a \fBname\fR attribute immediately preceeding
+the heading tag, or immediately following it, with no other tags
+around it.
+
+.RE
+
+.PP
+Any headings that do not fulfill at least one of these heuristics will
+be split as usual (if they constitute a split point under the given
+XPath query), but they will not be added to the ToC.
+
 .PP
 Please report any bugs you find to
 .URL "mailto:m-guelker@guelkerdev.de" "Marvin Gülker".

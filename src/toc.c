@@ -17,6 +17,7 @@
 #include "verbose.h"
 
 static xmlNodePtr strip_document(struct Splitter* p_splitter);
+static xmlChar* detect_target_anchor(struct Splitter* p_splitter, xmlNodePtr p_heading_node);
 
 /**
  * This function is to be called during the splitting process.
@@ -52,7 +53,7 @@ void splitter_collect_toc_info(struct Splitter* p_splitter, int index)
         }
 
         for(i=0; i < p_results->nodesetval->nodeNr; i++) {
-            xmlChar* anchorid = xmlGetProp(p_results->nodesetval->nodeTab[i], BAD_CAST("id"));
+            xmlChar* anchorid = detect_target_anchor(p_splitter, p_results->nodesetval->nodeTab[i]);
 
             /* If this heading as an ID attribute, remember it for later ToC generation. */
             if (anchorid) {
@@ -211,4 +212,56 @@ xmlNodePtr strip_document(struct Splitter* p_splitter)
     xmlXPathFreeContext(p_context);
 
     return p_parent_node;
+}
+
+xmlChar* detect_target_anchor(struct Splitter* p_splitter, xmlNodePtr p_heading_node)
+{
+    xmlChar* result = NULL;
+    xmlNodePtr p_node = NULL;
+
+    /* Try 1: ID attribute in H* tag */
+    result = xmlGetProp(p_heading_node, BAD_CAST("id"));
+
+    if (result)
+        return result;
+
+    /* Try 2: NAME attribute in <a> tag as child tag */
+    verbprintf("No ID attribute found. Trying NAME attribute in child <a> tag.\n");
+    p_node = xmlFirstElementChild(p_heading_node);
+
+    if (p_node) {
+        result = xmlGetProp(p_node, BAD_CAST("name"));
+
+        if (result) {
+            return result;
+        }
+    }
+
+    /* Try 3: <a> before h* tag */
+    verbprintf("No NAME attribute in contained <a> found. Trying preceeding <a> tag.\n");
+    p_node = xmlPreviousElementSibling(p_heading_node);
+
+    if (p_node) {
+        result = xmlGetProp(p_node, BAD_CAST("name"));
+
+        if (result) {
+            return result;
+        }
+    }
+
+    /* Try 4: <a> after h* tag */
+    verbprintf("No NAME attribute in preceeding <a> found. Trying following <a> tag.\n");
+    p_node = xmlNextElementSibling(p_heading_node);
+
+    if (p_node) {
+        result = xmlGetProp(p_node, BAD_CAST("name"));
+
+        if (result) {
+            return result;
+        }
+    }
+
+    /* Nothing found. */
+    verbprintf("No target anchors found. This heading cannot be added to the ToC.\n");
+    return NULL;
 }
