@@ -34,3 +34,11 @@ include_directories("${HTMLSPLIT_BINARY_DIR}")
 
 add_executable(htmlsplit ${htmlsplit_sources} ${HTMLSPLIT_BINARY_DIR}/htmlsplit_config.h)
 target_link_libraries(htmlsplit ${LIBXML2_LIBRARIES})
+
+########################################
+# Installation information
+
+install(TARGETS htmlsplit
+  DESTINATION bin)
+install(FILES "${HTMLSPLIT_SOURCE_DIR}/doc/man/htmlsplit.1"
+  DESTINATION share/man/man1/)
