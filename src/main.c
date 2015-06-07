@@ -19,12 +19,14 @@ static struct Splitter* sp_splitter = NULL;
 
 static void print_usage(const char* name)
 {
-    fprintf(stderr, "Usage: %s [-v] [l] [-t] [-q] [-x XPATH] [-i FILE] [-o FILE] [-p SECNUM]\n", name);
+    fprintf(stderr, "Usage: %s -V | -h | [-v] [l] [-t] [-q] [-x XPATH] [-i FILE] [-o FILE] [-p SECNUM]\n", name);
 }
 
 static void print_copyright()
 {
-    fprintf(stderr, "htmlsplit %s\n", HTMLSPLIT_VERSION);
+    fprintf(stderr, "                 8<---8<--- ::HTMLSPLIT:: ---8<---8<\n");
+    fprintf(stderr, "                      8<    version %s    8<\n", HTMLSPLIT_VERSION);
+    fprintf(stderr, "\n");
     fprintf(stderr,
             "Copyright (C) 2015 Marvin Gülker\n"
             "This program is free software under the GPL.\n"
@@ -38,7 +40,7 @@ static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
     int curopt = 0;
     bool copyright = true;
 
-    while ((curopt = getopt(argc, argv, "vhlqi:o:x:s:p:t:")) > 0) {
+    while ((curopt = getopt(argc, argv, "Vvhlqi:o:x:s:p:t:")) > 0) {
         switch (curopt) {
         case 'v':
             g_htmlsplit_verbose = true;
@@ -67,6 +69,9 @@ static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
         case 'q':
             copyright = false;
             break;
+        case 'V':
+            print_copyright();
+            exit(0);
         case 'h':
             print_usage(argv[0]);
             xmlCleanupParser();
