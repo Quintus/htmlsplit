@@ -18,6 +18,7 @@
 
 static xmlNodePtr strip_document(struct Splitter* p_splitter);
 static xmlChar* detect_target_anchor(struct Splitter* p_splitter, xmlNodePtr p_heading_node);
+static xmlNodePtr copy_heading_contents(struct Splitter* p_splitter, xmlNodePtr p_heading_node);
 
 /**
  * This function is to be called during the splitting process.
@@ -69,7 +70,7 @@ void splitter_collect_toc_info(struct Splitter* p_splitter, int index)
                 sprintf(p_section->filename, "%04d.html", index);
 
                 /* Copy the heading’s content */
-                p_section->content_nodes = xmlDocCopyNodeList(p_splitter->p_document, p_curhead->children);
+                p_section->content_nodes = copy_heading_contents(p_splitter, p_curhead);
                 if (!p_section->content_nodes) {
                     fprintf(stderr, "Warning: Failed to copy node list for ToC collection, skipping this heading.\n");
                     free(p_section);
@@ -275,4 +276,33 @@ xmlChar* detect_target_anchor(struct Splitter* p_splitter, xmlNodePtr p_heading_
     /* Nothing found. */
     verbprintf("No target anchors found. This heading cannot be added to the ToC.\n");
     return NULL;
+}
+
+xmlNodePtr copy_heading_contents(struct Splitter* p_splitter, xmlNodePtr p_heading_node)
+{
+    xmlXPathContextPtr p_context = NULL;
+    xmlXPathObjectPtr p_results  = NULL;
+    xmlNodePtr p_copy = NULL;
+
+    /* Here be dragons. I don’t understand the XPath query below myself, but it
+     * works appearently. What it is supposed to do is to select all tags inside
+     * the heading tag except <a> tags, for which only the text should be selected.
+     * This ensures that headings with embedded anchors that are used to target
+     * the heading (<h1><a name="foo" href="bar">text</a></h1> and variant constructions,
+     * especially the insane <h1><a name="foo" href="bar">text</a> normal text</h1>)
+     * get stripped out and replaced with their textual content. To complicate things,
+     * this only applies if the <a> tag has a NAME attribute, because without it,
+     * it can’t be targetted anyway and should just be copied over verbatim. */
+    p_context = xmlXPathNewContext(p_splitter->p_document);
+    p_results = xmlXPathNodeEval(p_heading_node, BAD_CAST("a[@name]/text()|node()[not(self::a[@name])]"), p_context);
+
+    if (p_results && p_results->nodesetval->nodeNr > 0) {
+        verbprintf("Heading with %d relevant nodes in it.\n", p_results->nodesetval->nodeNr);
+        p_copy = xmlDocCopyNodeList(p_splitter->p_document, p_results->nodesetval->nodeTab[0]);
+    }
+
+    xmlXPathFreeObject(p_results);
+    xmlXPathFreeContext(p_context);
+
+    return p_copy;
 }
