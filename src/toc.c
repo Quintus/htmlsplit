@@ -54,19 +54,20 @@ void splitter_collect_toc_info(struct Splitter* p_splitter, int index)
 
         for(i=0; i < p_results->nodesetval->nodeNr; i++) {
             xmlChar* anchorid = detect_target_anchor(p_splitter, p_results->nodesetval->nodeTab[i]);
+            xmlChar* titlestr = xmlNodeListGetString(p_splitter->p_document, p_results->nodesetval->nodeTab[i]->xmlChildrenNode, 1);
 
             /* If this heading as an ID attribute, remember it for later ToC generation. */
-            if (anchorid) {
+            if (anchorid && titlestr) { /* some silly people use empty <h*> tags, thus also check for `titlestr' */
                 struct SectionInfo* p_section = (struct SectionInfo*) malloc(sizeof(struct SectionInfo));
-                xmlChar* titlestr = NULL;
-                memset(p_section, '\0', sizeof(struct SectionInfo));
 
-                titlestr = xmlNodeListGetString(p_splitter->p_document, p_results->nodesetval->nodeTab[i]->xmlChildrenNode, 1);
+                verbprintf("Collecting heading '%s' for later ToC generation.\n", (char*) titlestr);
+                memset(p_section, '\0', sizeof(struct SectionInfo));
 
                 p_section->level = atoi(((char*) p_results->nodesetval->nodeTab[i]->name) + 1); /* Strip leading “h” of h1, h2, etc. */
                 strcpy(p_section->anchor, (char*) anchorid);
                 strcpy(p_section->title, (char*) titlestr);
                 sprintf(p_section->filename, "%04d.html", index);
+
 
                 if (p_last_section)
                     p_last_section->p_next = p_section;
@@ -76,6 +77,9 @@ void splitter_collect_toc_info(struct Splitter* p_splitter, int index)
 
                 xmlFree(anchorid);
                 xmlFree(titlestr);
+            }
+            else {
+                verbprintf("This heading has either no anchor or no content, thus no entry in ToC possible.\n");
             }
         }
     }
