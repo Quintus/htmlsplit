@@ -8,13 +8,9 @@ htmlsplit \- Split large HTML files into smaller HTML files
 
 .B htmlsplit
 .R [-i \fIFILE\fR]
-.R [-l]
 .R { [-o \fIDIR\fR] | [-s \fISEP\fR] }
-.R [-p \fISECNUM\fR]
-.R [-t \fIDEPTH\fR]
-.R [-q]
 .R [-x \fIXPATH\fR]
-.R [-v]
+.R [\fIOTHER OPTIONS\fR]
 
 .SH DESCRIPTION
 
@@ -22,7 +18,7 @@ htmlsplit \- Split large HTML files into smaller HTML files
 The htmlsplit command splits a large HTML file into several smaller
 HTML files by parsing it and applying an XPath query repeatedly onto
 the larger HTML document. Each location where the XPath query matches
-on the given document is remember as a \fIsplit point\fR, which you
+on the given document is remembered as a \fIsplit point\fR, which you
 can think of as the place the document is to be cut in two (or more)
 parts.
 
@@ -43,6 +39,10 @@ come out intermixed with the document parts then. For debugging
 purposes, this combination is accepted though.
 
 .SH OPTIONS
+
+.TP
+.B -h
+Output a short usage message and exit.
 
 .TP
 .B -i \fIFILE\fR
