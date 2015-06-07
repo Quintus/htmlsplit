@@ -52,7 +52,7 @@ struct Splitter* splitter_new()
     ptr->terminate            = false;
     ptr->secnum               = -1;
     ptr->interlink            = false;
-    ptr->tocdepth             = 1;
+    ptr->tocdepth             = 0;
     strcpy(ptr->splitexpr, "//h1"); /* default split point xpath */
     strcpy(ptr->stdoutsep, "<!-- HTMLSPLIT -->"); /* default stdout split separator */
 

@@ -96,7 +96,9 @@ int main(int argc, char* argv[])
     parse_argv(argc, argv, sp_splitter);
 
     splitter_split_file(sp_splitter);
-    splitter_generate_tocfile(sp_splitter);
+
+    if (sp_splitter->tocdepth > 0)
+        splitter_generate_tocfile(sp_splitter);
 
     splitter_free(sp_splitter);
 
