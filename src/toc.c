@@ -166,7 +166,11 @@ void splitter_generate_tocfile(struct Splitter* p_splitter)
         splitter_write_part(p_splitter, NULL);
     }
     else {
-        splitter_write_part(p_splitter, "toc.html");
+        char path[PATH_MAX];
+        memset(path, '\0', PATH_MAX);
+
+        sprintf(path, "%s/toc.html", p_splitter->outdir);
+        splitter_write_part(p_splitter, path);
     }
 }
 
