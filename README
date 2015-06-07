@@ -1,0 +1,90 @@
+          8<---8<---8<---8<---8<---8<---8<---8<---8<---8<---
+          8<---8<        :: HTMLSPLIT ::               8<---
+
+htmlsplit is a program to split your way to large HTML files into
+pieces that are actually readable. If you ever wanted to cut down this
+large HTML manual that is not available in smaller pieces and uses so
+much bandwith when retrieved, then this program is for you.
+
+htmlsplit’s main task is splitting up HTML files at headings, but it
+is not limited to that. By default, it splits up at all “h1” tags it
+finds in the file, but you can customise it to use any XPath query you
+like so that even broken files that do not use the HTML h* tags for
+content separation can be split by this tool.
+
+htmlsplit can also add navigation links to the bottom of the split
+pages, and create a Table of Contents (ToC) file containing links to
+all h* elements in the files it split up.
+
+It can also do some more things, check the manual page
+(doc/man/htmlsplit.1 in the source tree) for details.
+
+	     8<---8<---8<--- Dependencies ---8<---8<---8<
+
+htmlsplit is a C program that has exactly one external dependency,
+“libxml2” (see <http://www.xmlsoft.org/>), which has to be available
+on your system.
+
+htmlsplit requires a POSIX-compliant system for compilation. Each
+Linux should fulfill this requirement, as well as BSD and OSX,
+although I have not tested them. On Windows, you probably need to
+recur to POSIX emulation layers such as Cygwin. I will accept patches
+to make htmlsplit compile on MinGW, though, if they do not require too
+much Windows-specific code. You might want to ask me before you start
+working on this.
+
+	     8<---8<---8<--- Compilation ---8<---8<---8<
+
+In order to build htmlsplit, you need a C compiler, the libxml2
+library including any development headers if your distribution splits
+this up, and the cmake program (see <http://www.cmake.org>) which is
+used to manage the build system.
+
+In order to build it, issue the following commands in the source tree:
+
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make
+    $ [sudo] make install
+
+By default, this will install the “htmlsplit” executable into
+/usr/local/bin. If this is not what you want, execute the “cmake” step
+above like this:
+
+    $ cmake -DCMAKE_INSTALL_PREFIX=/opt/htmlsplit
+
+Replace “/opt/htmlsplit” with the desired target directory. The
+“htmlsplit” executable will be placed in a subdirectory “bin/” below
+that directory.
+
+
+	     8<---8<---8<--- Contribution ---8<---8<---8<
+
+The project is currently hosted at GitHub under the following URL:
+
+		 https://github.com/Quintus/htmlsplit
+
+For submitting bug reports, please email me at
+<m-guelker@guelkerdev.de> or file a bug report at the project page
+linked to above. The same goes for any pull requests, but please note
+that I will not accept contributions for making this software compile
+on proprietary compilers such as MSVC.
+
+	       8<---8<---8<--- License ---8<---8<---8<
+
+htmlsplit splits up large HTML files into smaller HTML files.
+Copyright © 2015 Marvin Gülker
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
