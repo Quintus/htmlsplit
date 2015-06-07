@@ -19,14 +19,25 @@ static struct Splitter* sp_splitter = NULL;
 
 static void print_usage(const char* name)
 {
-    fprintf(stderr, "Usage: %s [-v] [l] [-t] [-x XPATH] [-i FILE] [-o FILE] [-p SECNUM]\n", name);
+    fprintf(stderr, "Usage: %s [-v] [l] [-t] [-q] [-x XPATH] [-i FILE] [-o FILE] [-p SECNUM]\n", name);
+}
+
+static void print_copyright()
+{
+    fprintf(stderr,
+            "Copyright (C) 2015 Marvin Gülker\n"
+            "This program is free software under the GPL.\n"
+            "It comes with ABSOLUTELY NO WARRANTY; for details, please see the file\n"
+            "COPYING in the source tree.\n"
+            "\n");
 }
 
 static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
 {
     int curopt = 0;
+    bool copyright = true;
 
-    while ((curopt = getopt(argc, argv, "vhli:o:x:s:p:t:")) > 0) {
+    while ((curopt = getopt(argc, argv, "vhlqi:o:x:s:p:t:")) > 0) {
         switch (curopt) {
         case 'v':
             g_htmlsplit_verbose = true;
@@ -52,6 +63,9 @@ static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
         case 't':
             p_splitter->tocdepth = atoi(optarg);
             break;
+        case 'q':
+            copyright = false;
+            break;
         case 'h':
             print_usage(argv[0]);
             xmlCleanupParser();
@@ -62,6 +76,9 @@ static bool parse_argv(int argc, char* argv[], struct Splitter* p_splitter)
             exit(ERR_CLI);
         }
     }
+
+    if (copyright)
+        print_copyright();
 
     return true;
 }

@@ -11,7 +11,8 @@ htmlsplit \- Split large HTML files into smaller HTML files
 .R [-l]
 .R { [-o \fIDIR\fR] | [-s \fISEP\fR] }
 .R [-p \fISECNUM\fR]
-.R [t]
+.R [-t \fIDEPTH\fR]
+.R [-q]
 .R [-x \fIXPATH\fR]
 .R [-v]
 
@@ -91,6 +92,10 @@ output as a separate part. The ToC will contain all headings inside
 the matched area, up to headings of the given level (i.e. 3 will
 result in headings up to and including \fB<h3>\fR to be included into
 the ToC).
+
+.TP
+.B -q
+Do not output the copyright notice.
 
 .TP
 .B -x \fIXPATH\fR
