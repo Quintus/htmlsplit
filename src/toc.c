@@ -36,7 +36,7 @@ void splitter_collect_toc_info(struct Splitter* p_splitter, int index)
     p_context = xmlXPathNewContext(p_splitter->p_document);
     p_results = xmlXPathEvalExpression(BAD_CAST("//h1|//h2|//h3|//h4|//h5|//h6"), p_context);
 
-    verbprintf("Collecting ToC info for split point %d.\n", index);
+    verbprintf("Collecting ToC info for %d headings below split point %d.\n", p_results->nodesetval->nodeNr, index);
 
     /* Very first part before first split point may not have
      * any heading tags. */
