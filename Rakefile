@@ -1,7 +1,7 @@
 require "rake/clean"
 
 HTMLSPLIT_VERSION = File.read("CMakeLists.txt").match(/^set\(HTMLSPLIT_VERSION "(.*?)"\)$/)[1]
-PROJECT_DIR = File.expand_path(File.dirname(__FILE__))
+PROJECT_DIR       = File.expand_path(File.dirname(__FILE__))
 
 CLOBBER.include("build")
 
