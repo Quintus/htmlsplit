@@ -58,17 +58,22 @@ Replace “/opt/htmlsplit” with the desired target directory. The
 “htmlsplit” executable will be placed in a subdirectory “bin/” below
 that directory.
 
-
-	     8<---8<---8<--- Contribution ---8<---8<---8<
+              8<---8<---8<--- Repository ---8<---8<---8<
 
 The project website including source code repository and bugtracker is
 hosted at the following URL:
 
             http://devel.guelkerdev.de/projects/htmlsplit
 
+The canonical repository is available for cloning via Git:
+
+         $ git clone git://devel.guelkerdev.de/htmlsplit.git
+
 A GitHub mirror is available:
 
 		 https://github.com/Quintus/htmlsplit
+
+        8<---8<---8<--- Bugs and Pull Requests ---8<---8<---8<
 
 For submitting bug reports, please email me at
 <m-guelker@guelkerdev.de> or file a bug report at the project page
