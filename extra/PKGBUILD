@@ -1,0 +1,25 @@
+# Maintainer: Marvin Gülker <quintus@quintilianus.eu>
+pkgname=htmlsplit
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Split large HTML files into smaller valid HTML files."
+arch=("any")
+url="http://devel.guelkerdev.de/projects/htmlsplit"
+license=('GPL')
+depends=("libxml2")
+makedepends=("cmake")
+source=("$pkgname-$pkgver.tar.gz")
+sha256sums=("f7460b97bc25b521ad91216abb030771c3af0cc4fbc7c4f3c376fe48415fbc90")
+
+build() {
+    cd "$pkgname-$pkgver"
+    mkdir "build"
+    cd "build"
+    cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+    make
+}
+
+package() {
+    cd "$pkgname-$pkgver/build"
+    make DESTDIR="$pkgdir/" install
+}
